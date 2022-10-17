@@ -25,7 +25,7 @@ returnColor = [] # idk
 rgbScroll = False # its in the name
 isRGBing = False # rgbing flag, dont modify
 currentGoal = 1
-extra_yaw = 45
+extra_yaw = 0
 enableExtraYaw = False
 
 GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
