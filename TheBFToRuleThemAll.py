@@ -28,7 +28,7 @@ currentGoal = 1
 extra_yaw = 45
 enableExtraYaw = False
 
-GOALS = ["Speed", "Nose position", "Height", "Minimum distance from point", "Stuntpoints"]
+GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
 IS_REGISTERED = False
 SERVER = ""
 STOP_BF = False
@@ -299,12 +299,13 @@ class GUI(object):
         changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
 
     def bf_nose_gui(self):
-        global MIN_SPEED_KMH, MIN_CP, MUST_TOUCH_GROUND, COORDINATES, minX, minY, minZ, maxX, maxY, maxZ, enableExtraYaw, extra_yaw, strategy
+        global MIN_SPEED_KMH, MIN_CP, MUST_TOUCH_GROUND, COORDINATES, minX, minY, minZ, maxX, maxY, maxZ, enableExtraYaw, extra_yaw, strategy, TIME_MAX
         pair1 = [COORDINATES[0], COORDINATES[1], COORDINATES[2]].copy()
         pair2 = [COORDINATES[3], COORDINATES[4], COORDINATES[5]].copy()
         MIN_SPEED_KMH = round(MIN_SPEED_KMH, 2)
         changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
         changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
+        changed, TIME_MAX = imgui.input_float('Maxiumum evaluation time', TIME_MAX)
         _, MUST_TOUCH_GROUND = imgui.checkbox("Must touch ground", MUST_TOUCH_GROUND)
         _, enableExtraYaw = imgui.checkbox("Enable Custom Yaw Value", enableExtraYaw)
         
@@ -494,7 +495,6 @@ if __name__ == '__main__':
     x = threading.Thread(target=makeGUI, daemon=True)
     x.start()
     main()
-
 
 
 # 500th line: this is the goal
