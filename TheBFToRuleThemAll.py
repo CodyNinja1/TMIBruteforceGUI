@@ -149,13 +149,20 @@ class MainClient(Client):
         # 
         # if not (496 < x < 502 and 85 < y < 87 and 178 < z < 182):
         #     return False
-        if currentGoal == 0:
+        if currentGoal == 0: # Speed
             self.current = numpy.linalg.norm(state.velocity)
             if (self.current > self.best): 
                 IMPROVEMENTS += .5 # .5 because this if statement gets called twice per improvement :P
                 ROTATION = [round((yaw_rad/(2*pi))*360, 3), round((pitch_rad/(2*pi))*360, 3), round((roll_rad/(2*pi))*360, 3)]
+            
+            if MIN_CP > get_nb_cp(state):
+                return False
+
+            if MUST_TOUCH_GROUND and nb_wheels_on_ground(state) == 0:
+                return False
+            
             return self.best == -1 or (self.current > self.best)
-        elif currentGoal == 1:
+        elif currentGoal == 1: # Nosepos
             if MIN_SPEED_KMH > numpy.linalg.norm(state.velocity) * 3.6:
                 return False
 
@@ -198,10 +205,16 @@ class MainClient(Client):
             self.current = diff_yaw + to_deg(abs(car_pitch - target_pitch)) + to_deg(abs(car_roll - target_roll))
 
             return self.best == -1 or self.current < self.best
-        elif currentGoal == 2:
+        elif currentGoal == 2: # Height
             self.current = iface.get_simulation_state().position[1]
+
+            if MIN_CP > get_nb_cp(state):
+                return False
+
+            if MUST_TOUCH_GROUND and nb_wheels_on_ground(state) == 0:
+                return False
             return self.best == -1 or (self.current > self.best and vel * 3.6 > MIN_SPEED_KMH)
-        elif currentGoal == 3:
+        elif currentGoal == 3: # Point
             state = iface.get_simulation_state()
             pos = state.position
             speed = numpy.linalg.norm(state.velocity)
@@ -285,11 +298,13 @@ class GUI(object):
         self.loop()
     
     def bf_speed_gui(self): 
-        None
+        global MIN_CP
+        changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
 
     def bf_height_gui(self): 
-        global MIN_SPEED_KMH
+        global MIN_SPEED_KMH, MIN_CP
         MIN_SPEED_KMH = round(MIN_SPEED_KMH, 2)
+        changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
         changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
 
     def bf_nose_gui(self):
@@ -487,7 +502,4 @@ if __name__ == '__main__':
     x = threading.Thread(target=makeGUI, daemon=True)
     x.start()
     main()
-
-
-
-# 500th line: this is the goal
+# 504 lines!
