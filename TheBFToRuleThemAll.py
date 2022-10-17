@@ -1,4 +1,6 @@
 # shoutout to stuntlover
+import os
+
 
 import struct
 import imgui
@@ -24,9 +26,11 @@ colorChange = 0 # dont modify pls
 returnColor = [] # idk
 rgbScroll = False # its in the name
 isRGBing = False # rgbing flag, dont modify
-currentGoal = 0
+currentGoal = 1
+extra_yaw = 45
+enableExtraYaw = False
 
-GOALS = ["Speed", "Nose position", "Height", "Distance from point"]
+GOALS = ["Speed", "Nose position", "Height", "Minimum distance from point", "Stuntpoints"]
 IS_REGISTERED = False
 SERVER = ""
 STOP_BF = False
@@ -197,7 +201,6 @@ class MainClient(Client):
 
                 else:
                     # define the yaw angle you want in degrees, from -90 to -90
-                    extra_yaw = 45
                     target_yaw += to_rad(extra_yaw)
                     diff_yaw = to_deg(abs(car_yaw - target_yaw))
 
@@ -206,7 +209,7 @@ class MainClient(Client):
                 return self.best == -1 or self.current < self.best
             case 2:
                 self.current = iface.get_simulation_state().position[1]
-                return self.best == -1 or (self.current > self.best and vel > MIN_SPEED_KMH)
+                return self.best == -1 or (self.current > self.best and vel * 3.6 > MIN_SPEED_KMH)
             case 3:
                 state = iface.get_simulation_state()
                 pos = state.position
@@ -291,7 +294,7 @@ class GUI(object):
         self.loop()
     
     def bf_speed_gui(self): 
-        None     
+        None
 
     def bf_height_gui(self): 
         global MIN_SPEED_KMH
@@ -299,16 +302,21 @@ class GUI(object):
         changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
 
     def bf_nose_gui(self):
-        global MIN_SPEED_KMH, MIN_CP, MUST_TOUCH_GROUND, COORDINATES, minX, minY, minZ, maxX, maxY, maxZ
+        global MIN_SPEED_KMH, MIN_CP, MUST_TOUCH_GROUND, COORDINATES, minX, minY, minZ, maxX, maxY, maxZ, enableExtraYaw, extra_yaw
         pair1 = [COORDINATES[0], COORDINATES[1], COORDINATES[2]].copy()
         pair2 = [COORDINATES[3], COORDINATES[4], COORDINATES[5]].copy()
         MIN_SPEED_KMH = round(MIN_SPEED_KMH, 2)
         changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
         changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
         _, MUST_TOUCH_GROUND = imgui.checkbox("Must touch ground", MUST_TOUCH_GROUND)
+        _, enableExtraYaw = imgui.checkbox("Enable Custom Yaw Value", enableExtraYaw)
         
         imgui.separator()
-
+        
+        if enableExtraYaw:
+            changed, extra_yaw = imgui.input_float('Yaw', *pair1)
+            imgui.separator()
+        
         changed, pair1 = imgui.input_float3('Coordinate 1', *pair1)
         changed, pair2 = imgui.input_float3('Coordinate 2', *pair2)
         COORDINATES[0] = pair1[0]
@@ -327,13 +335,16 @@ class GUI(object):
     def bf_point_gui(self): 
         global POINT
         changed, POINT = imgui.input_float3('Point Coordinates', *POINT)
+        changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
+        changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
+        _, MUST_TOUCH_GROUND = imgui.checkbox("Must touch ground", MUST_TOUCH_GROUND)
 
     def bf_settings(self):
         imgui.begin("Bruteforce Settings", True)
-        global currentGoal
+        global currentGoal, GOALS
         clicked = False
         clicked, currentGoal = imgui.combo(
-            "Bruteforce Goal", currentGoal, ["Speed", "Nose position", "Height", "Minimum distance from point", "Stuntpoints"]
+            "Bruteforce Goal", currentGoal, GOALS
         )
 
         changed = False
