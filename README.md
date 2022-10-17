@@ -2,7 +2,7 @@
 This script provides an easy way to use bruteforce scripts in TMInterface! No more changing variables in the source code!
 
 # How to use
-Install Python 3.10, either from the Microsoft Store: https://apps.microsoft.com/store/detail/python-310/9PJPW5LDXLZ5 or from the official Python website: https://www.python.org/downloads/release/python-3100/
+Install Python, either from the Microsoft Store: https://apps.microsoft.com/store/detail/python-310/9PJPW5LDXLZ5 or from the official Python website: https://www.python.org/downloads/release/python-3100/
 
 After that's done, type `pip install tminterface`, `pip install imgui` and `pip install numpy` in your cmd/terminal, after those are done installing:
 
