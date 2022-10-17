@@ -31,7 +31,6 @@ enableExtraYaw = False
 GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point", "Stuntpoints"]
 IS_REGISTERED = False
 SERVER = ""
-STOP_BF = False
 COORDINATES = [0, 0, 0, 0, 0, 0]
 minX, maxX = sorted([COORDINATES[0], COORDINATES[3]])
 minY, maxY = sorted([COORDINATES[1], COORDINATES[4]])
@@ -113,16 +112,11 @@ class MainClient(Client):
         IMPROVEMENTS = 0
     
     def on_bruteforce_evaluate(self, iface, info: BFEvaluationInfo) -> BFEvaluationResponse:
-        global STOP_BF
         self.current_time = info.time
         self.phase = info.phase
 
         response = BFEvaluationResponse()
         response.decision = BFEvaluationDecision.DO_NOTHING
-        if STOP_BF:
-            response.decision = BFEvaluationDecision.STOP
-            STOP_BF = False
-            return response
         if self.phase == BFPhase.INITIAL:
             if self.is_eval_time() and self.is_better(iface):
                 self.best = self.current
@@ -379,7 +373,7 @@ class GUI(object):
         # pushStyleColor(imgui.COLOR_TITLE_BACKGROUND, titlecolor)
         imgui.begin("Bruteforce Result", True)
 
-        global SERVER, IS_REGISTERED, STOP_BF
+        global SERVER, IS_REGISTERED
 
         imgui.text(f"Bruteforce Best: {round(CURRENT_BEST, 3)} ")
         imgui.separator()
@@ -389,8 +383,6 @@ class GUI(object):
         connection = f"Connected to {SERVER}" if IS_REGISTERED else "Not Registered"
         imgui.text(f"Connection Status: {connection}")
         imgui.separator
-        if imgui.button("Stop Bruteforce"):
-            STOP_BF = True
                 
         imgui.end()
         # imgui.pop_style_color(2)
@@ -497,4 +489,12 @@ if __name__ == '__main__':
     main()
 
 
-# 500th line: this is the goal
+
+
+    
+    
+    
+    
+    
+    
+    # 500th line: this is the goal
