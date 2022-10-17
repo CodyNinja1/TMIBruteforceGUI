@@ -1,6 +1,4 @@
 # shoutout to stuntlover
-import os
-
 
 import struct
 import imgui
@@ -497,4 +495,6 @@ if __name__ == '__main__':
     x.start()
     main()
 
-# 500 lines!
+
+
+# 500th line: this is the goal
