@@ -25,10 +25,10 @@ returnColor = [] # idk
 rgbScroll = False # its in the name
 isRGBing = False # rgbing flag, dont modify
 currentGoal = 1
-extra_yaw = 0
+extra_yaw = 45
 enableExtraYaw = False
 
-GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
+GOALS = ["Speed", "Nose position", "Height", "Minimum distance from point", "Stuntpoints"]
 IS_REGISTERED = False
 SERVER = ""
 STOP_BF = False
@@ -334,7 +334,7 @@ class GUI(object):
         minZ, maxZ = sorted([round(COORDINATES[2], 2), round(COORDINATES[5], 2)])
 
     def bf_point_gui(self): 
-        global POINT
+        global POINT, MIN_CP, MIN_SPEED_KMH, MUST_TOUCH_GROUND
         changed, POINT = imgui.input_float3('Point Coordinates', *POINT)
         changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
         changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
