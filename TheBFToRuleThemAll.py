@@ -28,7 +28,7 @@ currentGoal = 1
 extra_yaw = 45
 enableExtraYaw = False
 
-GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point", "Stuntpoints"]
+GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
 IS_REGISTERED = False
 SERVER = ""
 COORDINATES = [0, 0, 0, 0, 0, 0]
@@ -490,11 +490,4 @@ if __name__ == '__main__':
 
 
 
-
-    
-    
-    
-    
-    
-    
-    # 500th line: this is the goal
+# 500th line: this is the goal
