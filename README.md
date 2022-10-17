@@ -13,3 +13,4 @@ Press the big green `Code` button -> Click `Download ZIP`, extract the ZIP file 
 Now you should have a GUI on your screen, select your bruteforce goal of choice, change the settings and validate a replay. Happy bruteforcing! :partying_face:
 
 (We are actively trying to improve the tool in any way we can, if it's adding a new script, fixing bugs etc, if you have any suggestions feel free to make a pull request or open an issue)
+
