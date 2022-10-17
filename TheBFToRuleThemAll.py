@@ -28,7 +28,7 @@ currentGoal = 1
 extra_yaw = 45
 enableExtraYaw = False
 
-GOALS = ["Speed", "Nose position", "Height", "Minimum distance from point", "Stuntpoints"]
+GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point", "Stuntpoints"]
 IS_REGISTERED = False
 SERVER = ""
 STOP_BF = False
