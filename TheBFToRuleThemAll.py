@@ -1,6 +1,4 @@
 # shoutout to stuntlover
-import os
-
 
 import struct
 import imgui
