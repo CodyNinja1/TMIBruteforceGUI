@@ -265,7 +265,7 @@ def impl_glfw_init(window_name="TrackMania Bruteforce", width=300, height=300):
 class GUI:
     def __init__(self):
         self.fontPath = "DroidSans.ttf" # font
-        self.color = [.75, .75, 1, 0] # default self.color
+        self.color = [0, 0, 0, 0] # default self.color
         self.bgcolor = [0, 0, 0, 1] # useless but useful
         self.titlecolor = [0, 0, 0, 1] # coming soon
         self.colorChange = 0 # dont modify pls
