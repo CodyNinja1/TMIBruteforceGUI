@@ -4,9 +4,7 @@ This script provides an easy way to use bruteforce scripts in TMInterface! No mo
 # How to use
 Install Python, either from the Microsoft Store: https://apps.microsoft.com/store/detail/python-310/9PJPW5LDXLZ5 or from the official Python website: https://www.python.org/downloads/release/python-3100/
 
-After that's done, type `pip install tminterface`, `pip install imgui` and `pip install numpy` in your cmd/terminal, after those are done installing:
-
-Open TMInterface
+After Python is done installing, type `pip install tminterface` and `pip install imgui` in your cmd/terminal, now you can open TMInterface
 
 Press the big green `Code` button -> Click `Download ZIP`, extract the ZIP file and open the `bf_gui.py` file, in the python console it should say `Registered to TMInterface0`, and in the TMInterface console `Registered a new client`
 

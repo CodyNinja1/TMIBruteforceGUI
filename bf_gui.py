@@ -17,7 +17,7 @@ import time
 import colorsys
 
 current_goal = 1 # 0 Speed, 1 Nosepos, 2 Height, 3 Point
-extra_yaw = 45
+extra_yaw = 0
 
 is_registered = False
 server = ""
@@ -330,10 +330,10 @@ class GUI:
         global current_goal, time_min, time_max
         current_goal = imgui.combo("Bruteforce Goal", current_goal, self.goals)[1]
         timetext = lambda s, t: int(float(imgui.input_text(s, str(t/1000), 256)[1])) * 1000
-        time_min = timetext("Evaluation start", time_min)
+        time_min = timetext("Evaluation start (s)", time_min)
         if time_min > time_max:
             time_max = time_min
-        time_max = timetext("Evaluation end", time_max)
+        time_max = timetext("Evaluation end (s)", time_max)
 
         imgui.separator()
 
