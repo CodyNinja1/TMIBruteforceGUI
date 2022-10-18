@@ -109,9 +109,6 @@ class MainClient(Client):
                 global current_best
                 current_best = self.best
 
-            #if self.is_max_time():
-                #print(f"base at {self.time}: {self.best=}, improvements: {improvements}")
-
         elif self.phase == BFPhase.SEARCH:
             if self.is_eval_time() and self.is_better(iface):
                 response.decision = BFEvaluationDecision.ACCEPT
@@ -127,13 +124,6 @@ class MainClient(Client):
         state = iface.get_simulation_state()
         yaw_rad, pitch_rad, roll_rad = state.yaw_pitch_roll
         vel = numpy.linalg.norm(state.velocity)
-
-        # Conditions
-        # if pitch_rad < 1.4 or pitch_rad > 1.7:
-        #     return False
-        # 
-        # if not (496 < x < 502 and 85 < y < 87 and 178 < z < 182):
-        #     return False
 
         if current_goal == 0: # Speed
             self.current = vel
@@ -214,11 +204,6 @@ class MainClient(Client):
 
             if must_touch_ground and nb_wheels_on_ground(state) == 0:
                 return False
-
-            #x, y, z = state.position
-            #x1, y1, z1, x2, y2, z2 = TRIGGER
-            #if not (min(x1,x2) < x < max(x1,x2) and min(y1,y2) < y < max(y1,y2) and min(z1,z2) < z < max(z1,z2)):
-            #    return False
             
             # Distance evaluation
             self.current = (pos[0]-point[0]) ** 2 + (pos[1]-point[1]) ** 2 + (pos[2]-point[2]) ** 2
@@ -265,9 +250,9 @@ def impl_glfw_init(window_name="TrackMania Bruteforce", width=300, height=300):
 class GUI:
     def __init__(self):
         self.fontPath = "DroidSans.ttf" # font
-        self.color = [0, 0, 0, 0] # default self.color
-        self.bgcolor = [0, 0, 0, 1] # useless but useful
-        self.titlecolor = [0, 0, 0, 1] # coming soon
+        self.color = [0, 0, 0, 0] # background color
+        self.bgcolor = [0, 0, 0, 1] # wtf does this do this isnt background color
+        self.titlecolor = [0, 0, 0, 1] # coming soon wink wink
         self.colorChange = 0 # dont modify pls
         self.rgbScroll = False # its in the name
         self.enableExtraYaw = False
@@ -337,16 +322,6 @@ class GUI:
 
         imgui.separator()
 
-        # match current_goal:
-        #     case 0:
-        #         self.bf_speed_gui()
-        #     case 1:
-        #         self.bf_nose_gui()
-        #     case 2:
-        #         self.bf_height_gui()
-        #     case 3:
-        #         self.bf_point_gui()
-
         if current_goal == 0:
             self.bf_speed_gui()
         elif current_goal == 1:
@@ -359,8 +334,6 @@ class GUI:
         imgui.end()
 
     def bf_result(self):
-        # pushStyleColor(imgui.COLOR_WINDOW_BACKGROUND, self.bgcolor)
-        # pushStyleColor(imgui.COLOR_TITLE_BACKGROUND, self.titlecolor)
         imgui.begin("Bruteforce Result", True)
 
         global server, is_registered
@@ -374,17 +347,11 @@ class GUI:
         imgui.separator
                 
         imgui.end()
-        # imgui.pop_style_color(2)
     
     def customize(self):
-        # pushStyleColor(imgui.COLOR_WINDOW_BACKGROUND, self.bgcolor)
-        # pushStyleColor(imgui.COLOR_BUTTON, self.bgcolor)
-        # pushStyleColor(imgui.COLOR_TITLE_BACKGROUND, self.titlecolor)
         imgui.begin("Customize", True)
         if not self.rgbScroll:
             self.color = list(imgui.color_edit4("Background", *self.color, show_alpha=False)[1])
-            # _, self.bgcolor = imgui.color_edit4("Window Background", *self.bgcolor, show_alpha=False)
-            # _, self.titlecolor = imgui.color_edit4("Active Titlebar Background", *self.titlecolor, show_alpha=False)
 
         if self.rgbScroll:
             self.colorChange = imgui.slider_float(
@@ -402,7 +369,6 @@ class GUI:
             self.backgroundColor = self.color.copy()
 
         imgui.end()
-        # imgui.pop_style_color(3)
 
     def loop(self):
         while not glfw.window_should_close(self.window):
