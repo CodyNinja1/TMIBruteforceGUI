@@ -15,6 +15,7 @@ from math import *
 import threading
 import time
 import colorsys
+import json
 
 current_goal = 1 # 0 Speed, 1 Nosepos, 2 Height, 3 Point
 extra_yaw = 0
@@ -257,8 +258,20 @@ class GUI:
         self.rgbScroll = False # its in the name
         self.enableExtraYaw = False
         self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
-
         self.backgroundColor = [0., 1., 0., 0.]
+
+        self.settings = { 
+            "font": self.fontPath,
+            "color": self.color,
+            "rgb_speed": self.colorChange,
+            "rgb_e": self.rgbScroll,
+            "yaw_e": self.enableExtraYaw,
+            "yaw": extra_yaw, 
+            "bf_goal": current_goal,
+            "coords": coordinates,
+            "point": point
+        }
+
         self.window = impl_glfw_init()
         gl.glClearColor(*self.backgroundColor)
         imgui.create_context()
@@ -272,6 +285,15 @@ class GUI:
 
         self.loop()
     
+    # def save_settings(self, file_location):
+    #     with open(file_location, "r+") as s_file:
+    #             json.dump(self.settings, s_file)
+    
+    # def load_settings(self, file_location):
+    #     with open(file_location, "r") as s_file:
+    #             json.dump(self.settings, s_file) 
+    # currently working on this feature, don't remove
+
     def bf_speed_gui(self): 
         global min_cp
         min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
@@ -311,8 +333,10 @@ class GUI:
         must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
 
     def bf_settings(self):
-        imgui.begin("Bruteforce Settings", True)
         global current_goal, time_min, time_max
+        imgui.begin("Bruteforce Settings", True)
+        
+
         current_goal = imgui.combo("Bruteforce Goal", current_goal, self.goals)[1]
         timetext = lambda s, t: int(float(imgui.input_text(s, str(t/1000), 256)[1])) * 1000
         time_min = timetext("Evaluation start (s)", time_min)
@@ -337,14 +361,14 @@ class GUI:
         imgui.begin("Bruteforce Result", True)
 
         global server, is_registered
+        connection_status = f"Connected to {server}" if is_registered else "Not Registered"
 
         imgui.text(f"Bruteforce Best: {round(current_best, 3)} ")
         imgui.separator()
         imgui.text(f"Car information at {time_min/1000}:")
         imgui.text(f"Rotation (yaw, pitch, roll): {rotation[0]}, {rotation[1]}, {rotation[2]}")
         imgui.text(f"Improvements: {improvements}")
-        imgui.text("Connection Status: " + f"Connected to {server}" if is_registered else "Not Registered")
-        imgui.separator
+        imgui.text("Connection Status: " + connection_status)
                 
         imgui.end()
     
