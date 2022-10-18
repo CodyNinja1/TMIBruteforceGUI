@@ -18,7 +18,16 @@ import colorsys
 import json
 
 current_goal = 1 # 0 Speed, 1 Nosepos, 2 Height, 3 Point
-extra_yaw = 0
+def setGoalPtr():
+    global current_goal_ptr
+    if current_goal == 0:
+        current_goal_ptr = MainClient.speed
+    if current_goal == 1:
+        current_goal_ptr = MainClient.nosepos
+    if current_goal == 2:
+        current_goal_ptr = MainClient.height
+    if current_goal == 3:
+        current_goal_ptr = MainClient.point
 
 is_registered = False
 server = ""
@@ -30,6 +39,7 @@ def unpackCoordinates():
     ]
 
 unpackCoordinates()
+extra_yaw = 0
 strategy = "any"
 time_min = 0
 time_max = time_min
@@ -112,6 +122,8 @@ class MainClient(Client):
 
         elif self.phase == BFPhase.SEARCH:
             if self.is_eval_time() and self.is_better(iface):
+                global improvements
+                improvements += 1
                 response.decision = BFEvaluationDecision.ACCEPT
                         
             if self.is_past_eval_time():
@@ -121,94 +133,93 @@ class MainClient(Client):
         return response
 
     def is_better(self, iface):
-        global improvements, rotation
-        state = iface.get_simulation_state()
-        yaw_rad, pitch_rad, roll_rad = state.yaw_pitch_roll
-        vel = numpy.linalg.norm(state.velocity)
+        global current_goal_ptr
+        self.state = iface.get_simulation_state()
+        self.yaw_rad, self.pitch_rad, self.roll_rad = self.state.yaw_pitch_roll
+        self.vel = numpy.linalg.norm(self.state.velocity)
+        return current_goal_ptr(self)
 
-        if current_goal == 0: # Speed
-            self.current = vel
-            if (self.current > self.best): 
-                # increments improvement counter if the improvement is accepted
-                improvements += self.phase == BFPhase.SEARCH
-                degs = lambda angle_rad: round(to_deg(angle_rad), 3)
-                rotation = [degs(yaw_rad), degs(pitch_rad), degs(roll_rad)]
-            
-            if min_cp > get_nb_cp(state):
-                return False
+    def speed(self):
+        global rotation
+        self.current = self.vel
+        if (self.current > self.best): 
+            degs = lambda angle_rad: round(to_deg(angle_rad), 3)
+            rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
+        
+        if min_cp > get_nb_cp(self.state):
+            return False
 
-            if must_touch_ground and nb_wheels_on_ground(state) == 0:
-                return False
-            
-            return self.best == -1 or (self.current > self.best)
+        if must_touch_ground and not nb_wheels_on_ground(self.state):
+            return False
+        
+        return self.best == -1 or (self.current > self.best)
 
-        elif current_goal == 1: # Nosepos
-            if min_speed_kmh > vel * 3.6:
-                return False
+    def nosepos(self):
+        if min_speed_kmh > self.vel * 3.6:
+            return False
 
-            if min_cp > get_nb_cp(state):
-                return False
+        if min_cp > get_nb_cp(self.state):
+            return False
 
-            if must_touch_ground and nb_wheels_on_ground(state) == 0:
-                return False
+        if must_touch_ground and nb_wheels_on_ground(self.state) == 0:
+            return False
 
-            car_yaw, car_pitch, car_roll = state.yaw_pitch_roll
+        car_yaw, car_pitch, car_roll = self.state.yaw_pitch_roll
 
-            target_yaw = atan2(state.velocity[0], state.velocity[2])
-            target_pitch = to_rad(90)
-            target_roll = to_rad(0)
+        target_yaw = atan2(self.state.velocity[0], self.state.velocity[2])
+        target_pitch = to_rad(90)
+        target_roll = to_rad(0)
 
-            # coordinates condition
+        # coordinates condition
 
-            car_x, car_y, car_z = state.position
-            
-            if not (minX < car_x < maxX and minY < car_y < maxY and minZ < car_z < maxZ):
-                return False
+        car_x, car_y, car_z = self.state.position
+        
+        if not (minX < car_x < maxX and minY < car_y < maxY and minZ < car_z < maxZ):
+            return False
 
-            # Customize diff_yaw
+        # Customize diff_yaw
 
-            if strategy == "any":
-                # any angle
-                diff_yaw = to_deg(abs(car_yaw - target_yaw))
-                if diff_yaw < 90:
-                    diff_yaw = 0
+        if strategy == "any":
+            # any angle
+            diff_yaw = to_deg(abs(car_yaw - target_yaw))
+            if diff_yaw < 90:
+                diff_yaw = 0
 
-            else:
-                # define the yaw angle you want in degrees, from -90 to -90
-                target_yaw += to_rad(extra_yaw)
-                diff_yaw = to_deg(abs(car_yaw - target_yaw))
+        else:
+            # define the yaw angle you want in degrees, from -90 to -90
+            target_yaw += to_rad(extra_yaw)
+            diff_yaw = to_deg(abs(car_yaw - target_yaw))
 
-            self.current = diff_yaw + to_deg(abs(car_pitch - target_pitch)) + to_deg(abs(car_roll - target_roll))
+        self.current = diff_yaw + to_deg(abs(car_pitch - target_pitch)) + to_deg(abs(car_roll - target_roll))
 
-            return self.best == -1 or self.current < self.best
+        return self.best == -1 or self.current < self.best
 
-        elif current_goal == 2: # Height
-            self.current = iface.get_simulation_state().position[1]
+    def height(self):
+        self.current = self.state.position[1]
 
-            if min_cp > get_nb_cp(state):
-                return False
+        if min_cp > get_nb_cp(self.state):
+            return False
 
-            if must_touch_ground and nb_wheels_on_ground(state) == 0:
-                return False
-            return self.best == -1 or (self.current > self.best and vel * 3.6 > min_speed_kmh)
+        if must_touch_ground and nb_wheels_on_ground(self.state) == 0:
+            return False
+        return self.best == -1 or (self.current > self.best and self.vel * 3.6 > min_speed_kmh)
 
-        elif current_goal == 3: # Point
-            state = iface.get_simulation_state()
-            pos = state.position
+    def point(self):
+        pos = self.state.position
 
-            # Conditions
-            if min_speed_kmh > vel * 3.6:
-                return False
+        # Conditions
+        if min_speed_kmh > self.vel * 3.6:
+            return False
 
-            if min_cp > get_nb_cp(state):
-                return False
+        if min_cp > get_nb_cp(self.state):
+            return False
 
-            if must_touch_ground and nb_wheels_on_ground(state) == 0:
-                return False
-            
-            # Distance evaluation
-            self.current = (pos[0]-point[0]) ** 2 + (pos[1]-point[1]) ** 2 + (pos[2]-point[2]) ** 2
-            return self.best == -1 or self.current < self.best
+        if must_touch_ground and nb_wheels_on_ground(self.state) == 0:
+            return False
+        
+        # Distance evaluation
+        self.current = (pos[0]-point[0]) ** 2 + (pos[1]-point[1]) ** 2 + (pos[2]-point[2]) ** 2
+        return self.best == -1 or self.current < self.best
 
     def is_eval_time(self):
         return time_min <= self.current_time <= time_max
@@ -315,13 +326,13 @@ class GUI:
         
         if self.enableExtraYaw:
             strategy = "custom"
-            extra_yaw = imgui.input_float('Yaw', *pair1)[1]
+            extra_yaw = imgui.input_float('Yaw', extra_yaw)[1]
             imgui.separator()
         else:
             strategy = "any"
         
-        pair1 = imgui.input_float3('Coordinate 1', *pair1)[1]
-        pair2 = imgui.input_float3('Coordinate 2', *pair2)[1]
+        input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
+        pair1, pair2 = input_pair('Coordinate 1', pair1), input_pair('Coordinate 2', pair2)
         coordinates = pair1 + pair2
         unpackCoordinates()
 
@@ -336,16 +347,7 @@ class GUI:
         global current_goal, time_min, time_max
         imgui.begin("Bruteforce Settings", True)
         
-
         current_goal = imgui.combo("Bruteforce Goal", current_goal, self.goals)[1]
-        timetext = lambda s, t: int(float(imgui.input_text(s, str(t/1000), 256)[1])) * 1000
-        time_min = timetext("Evaluation start (s)", time_min)
-        if time_min > time_max:
-            time_max = time_min
-        time_max = timetext("Evaluation end (s)", time_max)
-
-        imgui.separator()
-
         if current_goal == 0:
             self.bf_speed_gui()
         elif current_goal == 1:
@@ -354,6 +356,15 @@ class GUI:
             self.bf_height_gui()
         elif current_goal == 3:
             self.bf_point_gui()
+        setGoalPtr()
+
+        timetext = lambda s, t: int(float(imgui.input_text(s, str(t/1000), 256)[1])) * 1000
+        time_min = timetext("Evaluation start (s)", time_min)
+        if time_min > time_max:
+            time_max = time_min
+        time_max = timetext("Evaluation end (s)", time_max)
+
+        imgui.separator()
 
         imgui.end()
 
