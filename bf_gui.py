@@ -10,44 +10,36 @@ import numpy
 import sys
 from tminterface.structs import BFEvaluationDecision, BFEvaluationInfo, BFEvaluationResponse, BFPhase
 from tminterface.interface import TMInterface
-from tminterface.client import Client, run_client
+from tminterface.client import Client
 from math import *
 import threading
 import time
 import colorsys
 
-fontPath = "DroidSans.ttf" # font
-color = [.75, .75, 1, 0] # default color
-bgcolor = [0, 0, 0, 1] # useless but useful
-titlecolor = [0, 0, 0, 1] # coming soon
-colorChange = 0 # dont modify pls
-returnColor = [] # idk
-rgbScroll = False # its in the name
-isRGBing = False # rgbing flag, dont modify
-currentGoal = 1
+current_goal = 1 # 0 Speed, 1 Nosepos, 2 Height, 3 Point
 extra_yaw = 45
-enableExtraYaw = False
 
-GOALS = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
-IS_REGISTERED = False
-SERVER = ""
-COORDINATES = [0, 0, 0, 0, 0, 0]
-minX, maxX = sorted([COORDINATES[0], COORDINATES[3]])
-minY, maxY = sorted([COORDINATES[1], COORDINATES[4]])
-minZ, maxZ = sorted([COORDINATES[2], COORDINATES[5]])
+is_registered = False
+server = ""
+coordinates = [0, 0, 0, 0, 0, 0]
+def unpackCoordinates():
+    global coordinates, minX, minY, minZ, maxX, maxY, maxZ
+    (minX, maxX), (minY, maxY), (minZ, maxZ) = [
+        sorted((round(coordinates[i], 2), round(coordinates[i+3], 2))) for i in range(3)
+    ]
+
+unpackCoordinates()
 strategy = "any"
+time_min = 0
+time_max = time_min
+improvements = 0
+current_best = -1
+rotation = [0, 0, 0]
 
-TIME_MIN = 0
-TIME_MAX = TIME_MIN
-TIME = TIME_MIN / 1000 
-IMPROVEMENTS = -.5 # TODO: improve this abomination of an improvement counter
-CURRENT_BEST = -1
-ROTATION = [0, 0, 0]
-
-POINT = [0, 0, 0]
-MIN_SPEED_KMH = 0
-MIN_CP = 0
-MUST_TOUCH_GROUND = False
+point = [0, 0, 0]
+min_speed_kmh = 0
+min_cp = 0
+must_touch_ground = False
 
 def makeGUI():
     gui = GUI()
@@ -74,42 +66,35 @@ def to_deg(rad):
     return rad * 180 / pi
 
 def get_nb_cp(state):
-    return len([time for (time, _) in state.cp_data.cp_times if time != -1])
+    return len([time for time, _ in state.cp_data.cp_times if time != -1])
 
+WHEEL_OFFSETS = tuple([(3056 // 4) * i for i in range(4)])
 def nb_wheels_on_ground(state):
-    number = 0
-    
-    for i in range(4):
-        current_offset = (3056 // 4) * i
-        hasgroundcontact = struct.unpack('i', state.simulation_wheels[current_offset+292:current_offset+296])[0]
-        if hasgroundcontact:
-            number += 1
-
-    return number
+    return sum([struct.unpack('i', state.simulation_wheels[o+292:o+296])[0] for o in WHEEL_OFFSETS])
 
 class MainClient(Client):
     def __init__(self) -> None:
-        super(MainClient, self).__init__()
+        super().__init__()
         self.time = 0
         self.finished = False
 
     def on_registered(self, iface: TMInterface) -> None:
         print(f'Registered to {iface.server_name}')
-        global IS_REGISTERED, SERVER
-        IS_REGISTERED = True
-        SERVER = iface.server_name
+        global is_registered, server
+        is_registered = True
+        server = iface.server_name
 
     def on_deregistered(self, iface: TMInterface):
         print(f'Deregistered from {iface.server_name}')
-        global IS_REGISTERED
-        IS_REGISTERED = False
+        global is_registered
+        is_registered = False
 
     def on_simulation_begin(self, iface):
         self.lowest_time = iface.get_event_buffer().events_duration
         self.best = -1
         self.time = -1
-        global IMPROVEMENTS
-        IMPROVEMENTS = 0
+        global improvements
+        improvements = 0
     
     def on_bruteforce_evaluate(self, iface, info: BFEvaluationInfo) -> BFEvaluationResponse:
         self.current_time = info.time
@@ -121,11 +106,11 @@ class MainClient(Client):
             if self.is_eval_time() and self.is_better(iface):
                 self.best = self.current
                 self.time = self.current_time
-                global CURRENT_BEST
-                CURRENT_BEST = self.best
+                global current_best
+                current_best = self.best
 
             #if self.is_max_time():
-                #print(f"base at {self.time}: {self.best=}, improvements: {IMPROVEMENTS}")
+                #print(f"base at {self.time}: {self.best=}, improvements: {improvements}")
 
         elif self.phase == BFPhase.SEARCH:
             if self.is_eval_time() and self.is_better(iface):
@@ -138,7 +123,7 @@ class MainClient(Client):
         return response
 
     def is_better(self, iface):
-        global CURRENT_BEST, IMPROVEMENTS, STOP_BF, ROTATION, currentGoal, strategy
+        global improvements, rotation
         state = iface.get_simulation_state()
         yaw_rad, pitch_rad, roll_rad = state.yaw_pitch_roll
         vel = numpy.linalg.norm(state.velocity)
@@ -149,27 +134,31 @@ class MainClient(Client):
         # 
         # if not (496 < x < 502 and 85 < y < 87 and 178 < z < 182):
         #     return False
-        if currentGoal == 0: # Speed
-            self.current = numpy.linalg.norm(state.velocity)
+
+        if current_goal == 0: # Speed
+            self.current = vel
             if (self.current > self.best): 
-                IMPROVEMENTS += .5 # .5 because this if statement gets called twice per improvement :P
-                ROTATION = [round((yaw_rad/(2*pi))*360, 3), round((pitch_rad/(2*pi))*360, 3), round((roll_rad/(2*pi))*360, 3)]
+                # increments improvement counter if the improvement is accepted
+                improvements += self.phase == BFPhase.SEARCH
+                degs = lambda angle_rad: round(to_deg(angle_rad), 3)
+                rotation = [degs(yaw_rad), degs(pitch_rad), degs(roll_rad)]
             
-            if MIN_CP > get_nb_cp(state):
+            if min_cp > get_nb_cp(state):
                 return False
 
-            if MUST_TOUCH_GROUND and nb_wheels_on_ground(state) == 0:
+            if must_touch_ground and nb_wheels_on_ground(state) == 0:
                 return False
             
             return self.best == -1 or (self.current > self.best)
-        elif currentGoal == 1: # Nosepos
-            if MIN_SPEED_KMH > numpy.linalg.norm(state.velocity) * 3.6:
+
+        elif current_goal == 1: # Nosepos
+            if min_speed_kmh > vel * 3.6:
                 return False
 
-            if MIN_CP > get_nb_cp(state):
+            if min_cp > get_nb_cp(state):
                 return False
 
-            if MUST_TOUCH_GROUND and nb_wheels_on_ground(state) == 0:
+            if must_touch_ground and nb_wheels_on_ground(state) == 0:
                 return False
 
             car_yaw, car_pitch, car_roll = state.yaw_pitch_roll
@@ -182,11 +171,7 @@ class MainClient(Client):
 
             car_x, car_y, car_z = state.position
             
-            if not minX < car_x < maxX:
-                return False
-            if not minY < car_y < maxY:
-                return False
-            if not minZ  < car_z < maxZ:
+            if not (minX < car_x < maxX and minY < car_y < maxY and minZ < car_z < maxZ):
                 return False
 
             # Customize diff_yaw
@@ -205,28 +190,29 @@ class MainClient(Client):
             self.current = diff_yaw + to_deg(abs(car_pitch - target_pitch)) + to_deg(abs(car_roll - target_roll))
 
             return self.best == -1 or self.current < self.best
-        elif currentGoal == 2: # Height
+
+        elif current_goal == 2: # Height
             self.current = iface.get_simulation_state().position[1]
 
-            if MIN_CP > get_nb_cp(state):
+            if min_cp > get_nb_cp(state):
                 return False
 
-            if MUST_TOUCH_GROUND and nb_wheels_on_ground(state) == 0:
+            if must_touch_ground and nb_wheels_on_ground(state) == 0:
                 return False
-            return self.best == -1 or (self.current > self.best and vel * 3.6 > MIN_SPEED_KMH)
-        elif currentGoal == 3: # Point
+            return self.best == -1 or (self.current > self.best and vel * 3.6 > min_speed_kmh)
+
+        elif current_goal == 3: # Point
             state = iface.get_simulation_state()
             pos = state.position
-            speed = numpy.linalg.norm(state.velocity)
 
             # Conditions
-            if MIN_SPEED_KMH > speed * 3.6:
+            if min_speed_kmh > vel * 3.6:
                 return False
 
-            if MIN_CP > get_nb_cp(state):
+            if min_cp > get_nb_cp(state):
                 return False
 
-            if MUST_TOUCH_GROUND and nb_wheels_on_ground(state) == 0:
+            if must_touch_ground and nb_wheels_on_ground(state) == 0:
                 return False
 
             #x, y, z = state.position
@@ -235,16 +221,17 @@ class MainClient(Client):
             #    return False
             
             # Distance evaluation
-            self.current = (pos[0]-POINT[0]) ** 2 + (pos[1]-POINT[1]) ** 2 + (pos[2]-POINT[2]) ** 2
+            self.current = (pos[0]-point[0]) ** 2 + (pos[1]-point[1]) ** 2 + (pos[2]-point[2]) ** 2
             return self.best == -1 or self.current < self.best
+
     def is_eval_time(self):
-        return TIME_MIN <= self.current_time <= TIME_MAX
+        return time_min <= self.current_time <= time_max
 
     def is_past_eval_time(self):
-        return TIME_MAX <= self.current_time
+        return time_max <= self.current_time
 
     def is_max_time(self):
-        return TIME_MAX == self.current_time
+        return time_max == self.current_time
 
     def on_run_step(self, iface: TMInterface, _time: int):
         self.time = _time
@@ -262,7 +249,6 @@ def impl_glfw_init(window_name="TrackMania Bruteforce", width=300, height=300):
     glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
     glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-
     glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
 
     # Create a windowed mode window and its OpenGL context
@@ -276,95 +262,82 @@ def impl_glfw_init(window_name="TrackMania Bruteforce", width=300, height=300):
 
     return window
 
-
-class GUI(object):
+class GUI:
     def __init__(self):
-        super().__init__()
+        self.fontPath = "DroidSans.ttf" # font
+        self.color = [.75, .75, 1, 0] # default self.color
+        self.bgcolor = [0, 0, 0, 1] # useless but useful
+        self.titlecolor = [0, 0, 0, 1] # coming soon
+        self.colorChange = 0 # dont modify pls
+        self.rgbScroll = False # its in the name
+        self.enableExtraYaw = False
+        self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
+
         self.backgroundColor = [0., 1., 0., 0.]
         self.window = impl_glfw_init()
         gl.glClearColor(*self.backgroundColor)
         imgui.create_context()
         self.impl = GlfwRenderer(self.window)
-        if fontPath != "":
+        if self.fontPath:
             io = imgui.get_io()
             io.fonts.clear()
             io.font_global_scale = 1
-            new_font = io.fonts.add_font_from_file_ttf(fontPath, 20.0, io.fonts.get_glyph_ranges_latin())
+            new_font = io.fonts.add_font_from_file_ttf(self.fontPath, 20.0, io.fonts.get_glyph_ranges_latin())
             self.impl.refresh_font_texture()
-
-        self.string = ""
-        self.f = 0.5
 
         self.loop()
     
     def bf_speed_gui(self): 
-        global MIN_CP
-        changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
+        global min_cp
+        min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
 
     def bf_height_gui(self): 
-        global MIN_SPEED_KMH, MIN_CP
-        MIN_SPEED_KMH = round(MIN_SPEED_KMH, 2)
-        changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
-        changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
+        global min_speed_kmh, min_cp
+        min_speed_kmh = imgui.input_float('Minimum Speed (km/h)', round(min_speed_kmh, 2))[1]
+        min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
 
     def bf_nose_gui(self):
-        global MIN_SPEED_KMH, MIN_CP, MUST_TOUCH_GROUND, COORDINATES, minX, minY, minZ, maxX, maxY, maxZ, enableExtraYaw, extra_yaw, strategy, TIME_MAX
-        pair1 = [COORDINATES[0], COORDINATES[1], COORDINATES[2]].copy()
-        pair2 = [COORDINATES[3], COORDINATES[4], COORDINATES[5]].copy()
-        MIN_SPEED_KMH = round(MIN_SPEED_KMH, 2)
-        changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
-        changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
-        changed, TIME_MAX = imgui.input_float('Maxiumum evaluation time', TIME_MAX)
-        _, MUST_TOUCH_GROUND = imgui.checkbox("Must touch ground", MUST_TOUCH_GROUND)
-        _, enableExtraYaw = imgui.checkbox("Enable Custom Yaw Value", enableExtraYaw)
+        global min_speed_kmh, min_cp, must_touch_ground, coordinates, extra_yaw, strategy
+        pair1, pair2 = coordinates[:3], coordinates[3:]
+        min_speed_kmh = imgui.input_float('Minimum Speed (km/h)', round(min_speed_kmh, 2))[1]
+        min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
+        must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
+        self.enableExtraYaw = imgui.checkbox("Enable Custom Yaw Value", self.enableExtraYaw)[1]
         
         imgui.separator()
         
-        if enableExtraYaw:
+        if self.enableExtraYaw:
             strategy = "custom"
-            changed, extra_yaw = imgui.input_float('Yaw', *pair1)
+            extra_yaw = imgui.input_float('Yaw', *pair1)[1]
             imgui.separator()
         else:
             strategy = "any"
         
-        changed, pair1 = imgui.input_float3('Coordinate 1', *pair1)
-        changed, pair2 = imgui.input_float3('Coordinate 2', *pair2)
-        COORDINATES[0] = pair1[0]
-        COORDINATES[1] = pair1[1]
-        COORDINATES[2] = pair1[2]
-
-        COORDINATES[3] = pair2[0]
-        COORDINATES[4] = pair2[1]
-        COORDINATES[5] = pair2[2]
-
-
-        minX, maxX = sorted([round(COORDINATES[0], 2), round(COORDINATES[3], 2)])
-        minY, maxY = sorted([round(COORDINATES[1], 2), round(COORDINATES[4], 2)])
-        minZ, maxZ = sorted([round(COORDINATES[2], 2), round(COORDINATES[5], 2)])
+        pair1 = imgui.input_float3('Coordinate 1', *pair1)[1]
+        pair2 = imgui.input_float3('Coordinate 2', *pair2)[1]
+        coordinates = pair1 + pair2
+        unpackCoordinates()
 
     def bf_point_gui(self): 
-        global POINT, MIN_CP, MIN_SPEED_KMH, MUST_TOUCH_GROUND
-        changed, POINT = imgui.input_float3('Point Coordinates', *POINT)
-        changed, MIN_SPEED_KMH = imgui.input_float('Minimum Speed (km/h)', MIN_SPEED_KMH)
-        changed, MIN_CP = imgui.input_int('Minimum Checkpoints', MIN_CP)
-        _, MUST_TOUCH_GROUND = imgui.checkbox("Must touch ground", MUST_TOUCH_GROUND)
+        global point, min_cp, min_speed_kmh, must_touch_ground
+        point = imgui.input_float3('Point Coordinates', *point)[1]
+        min_speed_kmh = imgui.input_float('Minimum Speed (km/h)', min_speed_kmh)[1]
+        min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
+        must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
 
     def bf_settings(self):
         imgui.begin("Bruteforce Settings", True)
-        global currentGoal, GOALS
-        clicked = False
-        clicked, currentGoal = imgui.combo(
-            "Bruteforce Goal", currentGoal, GOALS
-        )
-
-        changed = False
-        global TIME
-        changed, TIME = imgui.input_float('Evaluation time', TIME)
-        TIME = round(TIME, 2)
+        global current_goal, time_min, time_max
+        current_goal = imgui.combo("Bruteforce Goal", current_goal, self.goals)[1]
+        timetext = lambda s, t: int(float(imgui.input_text(s, str(t/1000), 256)[1])) * 1000
+        time_min = timetext("Evaluation start", time_min)
+        if time_min > time_max:
+            time_max = time_min
+        time_max = timetext("Evaluation end", time_max)
 
         imgui.separator()
 
-        # match currentGoal:
+        # match current_goal:
         #     case 0:
         #         self.bf_speed_gui()
         #     case 1:
@@ -373,62 +346,60 @@ class GUI(object):
         #         self.bf_height_gui()
         #     case 3:
         #         self.bf_point_gui()
-        if currentGoal == 0:
+
+        if current_goal == 0:
             self.bf_speed_gui()
-        elif currentGoal == 1:
+        elif current_goal == 1:
             self.bf_nose_gui()
-        elif currentGoal == 2:
+        elif current_goal == 2:
             self.bf_height_gui()
-        elif currentGoal == 3:
+        elif current_goal == 3:
             self.bf_point_gui()
 
         imgui.end()
+
     def bf_result(self):
-        # pushStyleColor(imgui.COLOR_WINDOW_BACKGROUND, bgcolor)
-        # pushStyleColor(imgui.COLOR_TITLE_BACKGROUND, titlecolor)
+        # pushStyleColor(imgui.COLOR_WINDOW_BACKGROUND, self.bgcolor)
+        # pushStyleColor(imgui.COLOR_TITLE_BACKGROUND, self.titlecolor)
         imgui.begin("Bruteforce Result", True)
 
-        global SERVER, IS_REGISTERED
+        global server, is_registered
 
-        imgui.text(f"Bruteforce Best: {round(CURRENT_BEST, 3)} ")
+        imgui.text(f"Bruteforce Best: {round(current_best, 3)} ")
         imgui.separator()
-        imgui.text(f"Car information at {TIME}:")
-        imgui.text(f"Rotation (yaw, pitch, roll): {ROTATION[0]}, {ROTATION[1]}, {ROTATION[2]}")
-        imgui.text(f"Improvements: {IMPROVEMENTS}")
-        connection = f"Connected to {SERVER}" if IS_REGISTERED else "Not Registered"
-        imgui.text(f"Connection Status: {connection}")
+        imgui.text(f"Car information at {time_min/1000}:")
+        imgui.text(f"Rotation (yaw, pitch, roll): {rotation[0]}, {rotation[1]}, {rotation[2]}")
+        imgui.text(f"Improvements: {improvements}")
+        imgui.text("Connection Status: " + f"Connected to {server}" if is_registered else "Not Registered")
         imgui.separator
                 
         imgui.end()
         # imgui.pop_style_color(2)
     
     def customize(self):
-        global color, bgcolor, titlecolor, rgbScroll
-        # pushStyleColor(imgui.COLOR_WINDOW_BACKGROUND, bgcolor)
-        # pushStyleColor(imgui.COLOR_BUTTON, bgcolor)
-        # pushStyleColor(imgui.COLOR_TITLE_BACKGROUND, titlecolor)
+        # pushStyleColor(imgui.COLOR_WINDOW_BACKGROUND, self.bgcolor)
+        # pushStyleColor(imgui.COLOR_BUTTON, self.bgcolor)
+        # pushStyleColor(imgui.COLOR_TITLE_BACKGROUND, self.titlecolor)
         imgui.begin("Customize", True)
-        if not rgbScroll:
-            _, color = imgui.color_edit4("Background", *color, show_alpha=False)
-            # _, bgcolor = imgui.color_edit4("Window Background", *bgcolor, show_alpha=False)
-            # _, titlecolor = imgui.color_edit4("Active Titlebar Background", *titlecolor, show_alpha=False)
+        if not self.rgbScroll:
+            self.color = list(imgui.color_edit4("Background", *self.color, show_alpha=False)[1])
+            # _, self.bgcolor = imgui.color_edit4("Window Background", *self.bgcolor, show_alpha=False)
+            # _, self.titlecolor = imgui.color_edit4("Active Titlebar Background", *self.titlecolor, show_alpha=False)
 
-        if rgbScroll:
-            global colorChange, brightness
-            changed1, colorChange = imgui.slider_float(
-                "Speed", colorChange,
+        if self.rgbScroll:
+            self.colorChange = imgui.slider_float(
+                "Speed", self.colorChange,
                 min_value=0.0, max_value=100.0,
                 format="%.0f",
                 power=1.
-            )        
+            )[1]
 
-        if imgui.button("Start RGB scroll" if not rgbScroll else "Stop RGB Scroll"):
-            print("Start scroll" if not rgbScroll else "Stop scroll")
-            rgbScroll = not rgbScroll
+        if imgui.button("Start RGB scroll" if not self.rgbScroll else "Stop RGB Scroll"):
+            print("Start scroll" if not self.rgbScroll else "Stop scroll")
+            self.rgbScroll = not self.rgbScroll
         
-        color = list(color)
-        if not rgbScroll:
-            self.backgroundColor = color.copy()
+        if not self.rgbScroll:
+            self.backgroundColor = self.color.copy()
 
         imgui.end()
         # imgui.pop_style_color(3)
@@ -445,19 +416,12 @@ class GUI(object):
 
             imgui.render()
 
-            global color, rgbScroll, isRGBing, colorChange
+            if self.rgbScroll:
+                self.color = r2h(*self.color) # convert to hsv
+                self.color[0] = (self.color[0] + self.colorChange/1000000) % 256 # add hue
+                self.color = h2r(*self.color) # convert back into rgb
 
-            if rgbScroll:
-                color = r2h(color[0], color[1], color[2], color[3]) # now it is hsv
-                color[0] += colorChange/1000000 # add to hue
-
-                if color[0] > 255:
-                    color[0] = 0
-
-                color = h2r(color[0], color[1], color[2], color[3]) # convert back into rgb after adding to the hue
-
-            color = list(color)
-            self.backgroundColor = color.copy() # set the color
+            self.backgroundColor = self.color.copy() # set the self.color
 
             gl.glClearColor(*self.backgroundColor)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
@@ -497,9 +461,7 @@ def main():
             last_time = client.time
         time.sleep(0)
 
-
 if __name__ == '__main__':
     x = threading.Thread(target=makeGUI, daemon=True)
     x.start()
     main()
-# 504 lines!
