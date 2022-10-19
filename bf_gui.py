@@ -358,7 +358,7 @@ class GUI:
             self.bf_point_gui()
         setGoalPtr()
 
-        timetext = lambda s, t: int(float(imgui.input_text(s, str(t/1000), 256)[1])) * 1000
+        timetext = lambda s, t: int(imgui.input_float(s, t/1000)[1]) * 1000
         time_min = timetext("Evaluation start (s)", time_min)
         if time_min > time_max:
             time_max = time_min
