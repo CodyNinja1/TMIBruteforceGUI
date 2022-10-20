@@ -54,6 +54,7 @@ current_best = -1
 improvements = 0
 improvement_time = round(time_min/1000, 2)
 velocity = [0, 0, 0]
+real_speed = 0
 rotation = [0, 0, 0]
 
 def makeGUI():
@@ -123,6 +124,7 @@ class MainClient(Client):
                 self.best, current_best = self.current, self.current
                 improvements += 1
                 improvement_time = self.time
+                real_speed = numpy.linalg.norm(self.state.velocity) * 3.6
                 velocity = [
                     round(
                     numpy.sum(
@@ -312,13 +314,13 @@ class GUI:
 
     def bf_height_gui(self): 
         global min_speed_kmh, min_cp
-        min_speed_kmh = imgui.input_float('Minimum Speed (km/h)', round(min_speed_kmh, 2))[1]
+        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]
         min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
 
     def bf_nose_gui(self):
         global min_speed_kmh, min_cp, must_touch_ground, coordinates, extra_yaw, strategy
         pair1, pair2 = coordinates[:3], coordinates[3:]
-        min_speed_kmh = imgui.input_float('Minimum Speed (km/h)', round(min_speed_kmh, 2))[1]
+        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]
         min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
         must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
         self.enableExtraYaw = imgui.checkbox("Enable Custom Yaw Value", self.enableExtraYaw)[1]
@@ -340,7 +342,7 @@ class GUI:
     def bf_point_gui(self): 
         global point, min_cp, min_speed_kmh, must_touch_ground
         point = imgui.input_float3('Point Coordinates', *point)[1]
-        min_speed_kmh = imgui.input_float('Minimum Speed (km/h)', min_speed_kmh)[1]
+        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]
         min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
         must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
 
@@ -370,15 +372,17 @@ class GUI:
         imgui.end()
 
     def bf_result(self):
-        imgui.begin("Bruteforce Result", True)
-
+        imgui.begin("Bruteforce Result", True) 
+        
         imgui.text(f"Bruteforce Best: {round(current_best, 3)} ")
         imgui.text(f"Improvements: {improvements}")
         imgui.text(f"Car information at {improvement_time}:")
         imgui.text(f"Velocity (sideways, vertically, in facing direction): {velocity}")
         imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
         imgui.text("Connection Status: " + (f"Connected to {server}" if is_registered else "Not Registered"))
-                
+        
+        imgui.separator()
+        
         imgui.end()
     
     def customize(self):
