@@ -314,7 +314,7 @@ class GUI:
 
     def bf_height_gui(self): 
         global min_speed_kmh, min_cp
-        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]# , round(min_speed_kmh, 2))[1]
+        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]
         min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
 
     def bf_nose_gui(self):
