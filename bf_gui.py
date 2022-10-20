@@ -39,18 +39,22 @@ def unpackCoordinates():
     ]
 
 unpackCoordinates()
-extra_yaw = 0
 strategy = "any"
+extra_yaw = 0
 time_min = 0
 time_max = time_min
-improvements = 0
-current_best = -1
-rotation = [0, 0, 0]
 
 point = [0, 0, 0]
 min_speed_kmh = 0
 min_cp = 0
 must_touch_ground = False
+
+# bf result window
+current_best = -1
+improvements = 0
+improvement_time = round(time_min/1000, 2)
+velocity = [0, 0, 0]
+rotation = [0, 0, 0]
 
 def makeGUI():
     gui = GUI()
@@ -86,44 +90,52 @@ def nb_wheels_on_ground(state):
 class MainClient(Client):
     def __init__(self) -> None:
         super().__init__()
-        self.time = 0
+        self.time = -1
         self.finished = False
 
     def on_registered(self, iface: TMInterface) -> None:
-        print(f'Registered to {iface.server_name}')
         global is_registered, server
+        print(f'Registered to {iface.server_name}')
         is_registered = True
         server = iface.server_name
 
     def on_deregistered(self, iface: TMInterface):
-        print(f'Deregistered from {iface.server_name}')
         global is_registered
+        print(f'Deregistered from {iface.server_name}')
         is_registered = False
 
     def on_simulation_begin(self, iface):
-        self.lowest_time = iface.get_event_buffer().events_duration
-        self.best = -1
-        self.time = -1
         global improvements
+        self.lowest_time = iface.get_event_buffer().events_duration
+        self.time = -1
+        self.best = -1
         improvements = 0
     
     def on_bruteforce_evaluate(self, iface, info: BFEvaluationInfo) -> BFEvaluationResponse:
-        self.current_time = info.time
+        global current_best, improvements, improvement_time, velocity, rotation
+        self.time = info.time
         self.phase = info.phase
 
         response = BFEvaluationResponse()
         response.decision = BFEvaluationDecision.DO_NOTHING
-        if self.phase == BFPhase.INITIAL:
+        if self.phase == BFPhase.SEARCH:
             if self.is_eval_time() and self.is_better(iface):
-                self.best = self.current
-                self.time = self.current_time
-                global current_best
-                current_best = self.best
-
-        elif self.phase == BFPhase.SEARCH:
-            if self.is_eval_time() and self.is_better(iface):
-                global improvements
+                self.best, current_best = self.current, self.current
                 improvements += 1
+                improvement_time = self.time
+                velocity = [
+                    round(
+                    numpy.sum(
+                        [
+                            self.state.velocity[i] * self.state.rotation_matrix[i][idx]
+                            for i in range(3)
+                        ]
+                    ), 3)
+                    for idx in range(3)
+                ]
+                degs = lambda angle_rad: round(to_deg(angle_rad), 3)
+                rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
+
                 response.decision = BFEvaluationDecision.ACCEPT
                         
             if self.is_past_eval_time():
@@ -133,26 +145,20 @@ class MainClient(Client):
         return response
 
     def is_better(self, iface):
-        global current_goal_ptr
         self.state = iface.get_simulation_state()
         self.yaw_rad, self.pitch_rad, self.roll_rad = self.state.yaw_pitch_roll
         self.vel = numpy.linalg.norm(self.state.velocity)
         return current_goal_ptr(self)
 
     def speed(self):
-        global rotation
         self.current = self.vel
-        if (self.current > self.best): 
-            degs = lambda angle_rad: round(to_deg(angle_rad), 3)
-            rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
-        
         if min_cp > get_nb_cp(self.state):
             return False
 
         if must_touch_ground and not nb_wheels_on_ground(self.state):
             return False
         
-        return self.best == -1 or (self.current > self.best)
+        return self.best == -1 or self.current > self.best
 
     def nosepos(self):
         if min_speed_kmh > self.vel * 3.6:
@@ -200,13 +206,11 @@ class MainClient(Client):
         if min_cp > get_nb_cp(self.state):
             return False
 
-        if must_touch_ground and nb_wheels_on_ground(self.state) == 0:
+        if must_touch_ground and not nb_wheels_on_ground(self.state):
             return False
         return self.best == -1 or (self.current > self.best and self.vel * 3.6 > min_speed_kmh)
 
     def point(self):
-        pos = self.state.position
-
         # Conditions
         if min_speed_kmh > self.vel * 3.6:
             return False
@@ -218,20 +222,17 @@ class MainClient(Client):
             return False
         
         # Distance evaluation
-        self.current = (pos[0]-point[0]) ** 2 + (pos[1]-point[1]) ** 2 + (pos[2]-point[2]) ** 2
+        self.current = sum([(self.state.position[p] - point[p]) ** 2 for p in range(3)])
         return self.best == -1 or self.current < self.best
 
     def is_eval_time(self):
-        return time_min <= self.current_time <= time_max
+        return time_min <= self.time <= time_max
 
     def is_past_eval_time(self):
-        return time_max <= self.current_time
+        return time_max <= self.time
 
     def is_max_time(self):
-        return time_max == self.current_time
-
-    def on_run_step(self, iface: TMInterface, _time: int):
-        self.time = _time
+        return time_max == self.time
 
     def on_checkpoint_count_changed(self, iface: TMInterface, current: int, target: int):
         if current == target:
@@ -262,14 +263,14 @@ def impl_glfw_init(window_name="TrackMania Bruteforce", width=300, height=300):
 class GUI:
     def __init__(self):
         self.fontPath = "DroidSans.ttf" # font
-        self.color = [0, 0, 0, 0] # background color
-        self.bgcolor = [0, 0, 0, 1] # wtf does this do this isnt background color
+        self.color = [0.25, 0.5, 0.75, 0.5] # background color
+        self.bgcolor = [0.25, 0.5, 0.75, 0.5] # wtf does this do this isnt background color
         self.titlecolor = [0, 0, 0, 1] # coming soon wink wink
         self.colorChange = 0 # dont modify pls
         self.rgbScroll = False # its in the name
         self.enableExtraYaw = False
         self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
-        self.backgroundColor = [0., 1., 0., 0.]
+        self.backgroundColor = [0.25, 0.5, 0.75, 0.5]
 
         self.settings = { 
             "font": self.fontPath,
@@ -291,7 +292,7 @@ class GUI:
             io = imgui.get_io()
             io.fonts.clear()
             io.font_global_scale = 1
-            new_font = io.fonts.add_font_from_file_ttf(self.fontPath, 20.0, io.fonts.get_glyph_ranges_latin())
+            new_font = io.fonts.add_font_from_file_ttf(self.fontPath, 20, io.fonts.get_glyph_ranges_latin())
             self.impl.refresh_font_texture()
 
         self.loop()
@@ -358,7 +359,7 @@ class GUI:
             self.bf_point_gui()
         setGoalPtr()
 
-        timetext = lambda s, t: int(imgui.input_float(s, t/1000)[1]) * 1000
+        timetext = lambda s, t: round(imgui.input_float(s, t/1000)[1] * 1000, 3)
         time_min = timetext("Evaluation start (s)", time_min)
         if time_min > time_max:
             time_max = time_min
@@ -371,36 +372,31 @@ class GUI:
     def bf_result(self):
         imgui.begin("Bruteforce Result", True)
 
-        global server, is_registered
-        connection_status = f"Connected to {server}" if is_registered else "Not Registered"
-
         imgui.text(f"Bruteforce Best: {round(current_best, 3)} ")
-        imgui.separator()
-        imgui.text(f"Car information at {time_min/1000}:")
-        imgui.text(f"Rotation (yaw, pitch, roll): {rotation[0]}, {rotation[1]}, {rotation[2]}")
         imgui.text(f"Improvements: {improvements}")
-        imgui.text("Connection Status: " + connection_status)
+        imgui.text(f"Car information at {improvement_time}:")
+        imgui.text(f"Velocity (sideways, vertically, in facing direction): {velocity}")
+        imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
+        imgui.text("Connection Status: " + (f"Connected to {server}" if is_registered else "Not Registered"))
                 
         imgui.end()
     
     def customize(self):
         imgui.begin("Customize", True)
-        if not self.rgbScroll:
-            self.color = list(imgui.color_edit4("Background", *self.color, show_alpha=False)[1])
-
-        if self.rgbScroll:
-            self.colorChange = imgui.slider_float(
-                "Speed", self.colorChange,
-                min_value=0.0, max_value=100.0,
-                format="%.0f",
-                power=1.
-            )[1]
 
         if imgui.button("Start RGB scroll" if not self.rgbScroll else "Stop RGB Scroll"):
-            print("Start scroll" if not self.rgbScroll else "Stop scroll")
             self.rgbScroll = not self.rgbScroll
         
-        if not self.rgbScroll:
+        if self.rgbScroll:
+            if not any(self.color[:3]): self.color = [(i + 1) / 4 for i in range(4)]
+            self.colorChange = imgui.slider_float(
+                "Speed", self.colorChange,
+                min_value=0, max_value=32,
+                power=1
+            )[1]
+        
+        else:
+            self.color = list(imgui.color_edit4("Background", *self.color, show_alpha=False)[1])
             self.backgroundColor = self.color.copy()
 
         imgui.end()
@@ -419,7 +415,7 @@ class GUI:
 
             if self.rgbScroll:
                 self.color = r2h(*self.color) # convert to hsv
-                self.color[0] = (self.color[0] + self.colorChange/1000000) % 256 # add hue
+                self.color[0] = (self.color[0] + self.colorChange/1000000) % 1 # add hue
                 self.color = h2r(*self.color) # convert back into rgb
 
             self.backgroundColor = self.color.copy() # set the self.color
