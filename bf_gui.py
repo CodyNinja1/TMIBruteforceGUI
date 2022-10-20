@@ -361,7 +361,7 @@ class GUI:
             self.bf_point_gui()
         setGoalPtr()
 
-        timetext = lambda s, t: round(imgui.input_float(s, t/1000)[1] * 1000, 2)
+        timetext = lambda s, t: round(imgui.input_float(s, t/1000)[1] * 1000, 3)
         time_min = timetext("Evaluation start (s)", time_min)
         if time_min > time_max:
             time_max = time_min
@@ -372,18 +372,17 @@ class GUI:
         imgui.end()
 
     def bf_result(self):
-        imgui.begin("Bruteforce Result", True)
+        imgui.begin("Bruteforce Result", True) 
         
         imgui.text(f"Bruteforce Best: {round(current_best, 3)} ")
         imgui.text(f"Improvements: {improvements}")
-        imgui.text(f"Car information at {improvement_time} (s):")
-        imgui.separator()
+        imgui.text(f"Car information at {improvement_time}:")
         imgui.text(f"Velocity (sideways, vertically, in facing direction): {velocity}")
-        imgui.text(f"Real Speed (km/h): {real_speed}")
         imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
-        imgui.separator()
         imgui.text("Connection Status: " + (f"Connected to {server}" if is_registered else "Not Registered"))
-                
+        
+        imgui.separator()
+        
         imgui.end()
     
     def customize(self):
