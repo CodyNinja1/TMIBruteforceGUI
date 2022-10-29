@@ -1,6 +1,8 @@
 # TMIBruteforceGUI
 This script provides an easy way to use bruteforce scripts in TMInterface! No more changing variables in the source code!
 
+![Bruteforce Script Window on Startup](/script.png?raw=true)
+
 # How to use
 Install Python, either from the Microsoft Store: https://apps.microsoft.com/store/detail/python-310/9PJPW5LDXLZ5 or from the official Python website: https://www.python.org/downloads/release/python-3100/
 
