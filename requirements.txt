@@ -1,4 +1,4 @@
 imgui==1.4.1
 glfw==2.5.5
 tminterface==0.5
-opengl==3.1.6
+pyopengl==3.1.6
