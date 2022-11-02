@@ -1,4 +1,4 @@
-# shoutout to stuntlover
+# Shoutout to Stuntlover (they are god)
 
 import struct
 import imgui
@@ -49,7 +49,7 @@ min_speed_kmh = 0
 min_cp = 0
 must_touch_ground = False
 
-# bf result window
+# bf result window (yes)
 current_best = -1
 improvements = 0
 improvement_time = round(time_min/1000, 2)
