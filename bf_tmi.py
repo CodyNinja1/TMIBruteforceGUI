@@ -1,3 +1,5 @@
+# this is the MainClient method used for bruteforce
+
 import numpy
 import sys
 from tminterface.structs import BFEvaluationDecision, BFEvaluationInfo, BFEvaluationResponse, BFPhase
