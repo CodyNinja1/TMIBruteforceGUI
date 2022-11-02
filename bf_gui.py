@@ -1,4 +1,4 @@
-# shoutout to stuntlover
+# Shoutout to Stuntlover (she is god)
 
 import struct
 import imgui
