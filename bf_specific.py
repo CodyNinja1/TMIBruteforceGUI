@@ -11,11 +11,10 @@ class GoalSpeed:
     def is_better(self, client, g):
         client.current = numpy.linalg.norm(client.state.velocity) * 3.6
 
-        if client.best == -1 or client.current > client.best:
-            print(f"New best speed: {client.current} km/h")
-            return True
-        
-        return False
+        return client.best == -1 or client.current > client.best
+
+    def print(self, client, g):
+        print(f"New best speed at {g.improvement_time} s: {client.current} km/h")
 
 class GoalNosepos:
     def is_better(self, client, g):
@@ -39,31 +38,28 @@ class GoalNosepos:
 
         client.current = diff_yaw + to_deg(abs(car_pitch - target_pitch)) + to_deg(abs(car_roll - target_roll))
 
-        if client.best == -1 or client.current < client.best:
-            print(f"New best nosepos: {client.current}°")
-            return True
-        
-        return False
+        return client.best == -1 or client.current < client.best
+
+    def print(self, client, g):
+        print(f"New best nosepos at {g.improvement_time} s: {client.current}°")
 
 class GoalHeight:
     def is_better(self, client, g):
         client.current = client.state.position[1]
 
-        if client.best == -1 or client.current > client.best:
-            print(f"New best height: {client.current} m")
-            return True
-        
-        return False
+        return client.best == -1 or client.current > client.best
+
+    def print(self, client, g):
+        print(f"New best height at {g.improvement_time} s: {client.current} m")
 
 class GoalPoint:
     def is_better(self, client, g):
         client.current = sum([(client.state.position[p] - g.point[p]) ** 2 for p in range(3)])
 
-        if client.best == -1 or client.current < client.best:
-            print(f"New best distance: {math.sqrt(client.current)} m")
-            return True
-        
-        return False
+        return client.best == -1 or client.current < client.best
+
+    def print(self, client, g):
+        print(f"New best distance at {g.improvement_time} s: {math.sqrt(client.current)} m")
 
 # TODO add specific GUI here (somehow)
 
