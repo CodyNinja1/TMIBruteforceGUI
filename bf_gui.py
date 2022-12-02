@@ -1,4 +1,4 @@
-# shoutout to bestie
+# shoutout to stunt, sai, and sheets
 
 import colorsys
 import glfw
@@ -233,9 +233,10 @@ class GUI:
         self.fontPath = "" # font
         self.color = [0.25, 0.5, 0.75, 0.5] # background color
         self.bgcolor = [0.25, 0.5, 0.75, 0.5] # wtf does this do this isnt background color
-        self.titlecolor = [0, 0, 0, 1] # coming soon wink wink
-        self.colorChange = 0 # dont modify pls
-        self.rgbScroll = False # its in the name
+        # self.titlecolor = [0, 0, 0, 1] not coming because im dumb at programming
+        # TODO: be not dumb at programming
+        self.colorChange = 0 # you can change this if you want
+        self.rgbScroll = False # rgb background flag
         self.enableExtraYaw = False
         self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
         self.backgroundColor = [0.25, 0.5, 0.75, 0.5]
@@ -339,9 +340,13 @@ class GUI:
         imgui.end()
 
     def bf_result(self):
+        # TODO: is this bad programming practises?
+        # this is to clarify what unit of measurement is currently used
+        unit = "(m)" if (g.current_goal == 2) or (g.current_goal == 3) else ("(m/s)" if g.current_goal != 1 else "(degrees)")
+
         imgui.begin("Bruteforce Result", True) 
         
-        imgui.text(f"Bruteforce Best: {round(current_best, 3)} ")
+        imgui.text(f"Bruteforce Best: {round(current_best, 3)} {unit}")
         imgui.text(f"Improvements: {improvements}")
         imgui.text(f"Car information at {g.improvement_time}:")
         imgui.text(f"Velocity (sideways, vertically, in facing direction): {velocity}")
