@@ -1,4 +1,4 @@
-# shoutout to stunt, sai, and sheets
+# shoutout to stunt, sai, and shweetz
 
 import colorsys
 import glfw
