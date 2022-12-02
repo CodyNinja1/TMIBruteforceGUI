@@ -4,7 +4,7 @@ This script provides an easy way to use bruteforce scripts in TMInterface! No mo
 ![Bruteforce Script Window on Startup](/script.png?raw=true)
 
 # How to use
-Install Python, either from the Microsoft Store: https://apps.microsoft.com/store/detail/python-310/9PJPW5LDXLZ5 or from the official Python website: https://www.python.org/downloads/release/python-3100/
+Install Python, either from the Microsoft Store: https://apps.microsoft.com/store/detail/python-310/9PJPW5LDXLZ5 or from the official Python website: [https://www.python.org/downloads/release/python-3100/](https://www.python.org/downloads/release/python-3110/)
 
 After Python is done installing, press the big green `Code` button on this page -> Click `Download ZIP`, extract the ZIP into a folder
 
