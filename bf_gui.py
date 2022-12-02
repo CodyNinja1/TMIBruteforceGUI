@@ -36,6 +36,9 @@ class Global:
         self.pair1 = [0, 0, 0]
         self.pair2 = [999, 999, 999]
 
+        # Result
+        self.improvement_time = 0
+
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
         (self.minX, self.maxX), (self.minY, self.maxY), (self.minZ, self.maxZ) = [
@@ -60,7 +63,6 @@ must_touch_ground = False
 # bf result window (yes)
 current_best = -1
 improvements = 0
-improvement_time = round(time_min/1000, 2)
 velocity = [0, 0, 0]
 real_speed = 0
 rotation = [0, 0, 0]
@@ -113,6 +115,8 @@ class MainClient(Client):
         g.is_registered = False
 
     def on_simulation_begin(self, iface):
+        iface.execute_command('set controller bruteforce')
+
         global improvements
         self.lowest_time = iface.get_event_buffer().events_duration
         self.time = -1
@@ -126,21 +130,19 @@ class MainClient(Client):
         if g.current_goal == 3: self.goal = GoalPoint()
     
     def on_bruteforce_evaluate(self, iface, info: BFEvaluationInfo) -> BFEvaluationResponse:
-        global current_best, improvements, improvement_time, velocity, rotation
+        global current_best, improvements, velocity, rotation
         self.time = info.time
         self.phase = info.phase
-
-        # TODO fix 2 bugs:
-        # - no base run self.best because no initial phase
-        # - no checking initial phase post accept, even though search phase accepts instantly (before evaluation time stop)
         
         response = BFEvaluationResponse()
         response.decision = BFEvaluationDecision.DO_NOTHING
-        if self.phase == BFPhase.SEARCH:
+
+        # Initial phase (base run + after every ACCEPT improvement)
+        # Check the all the ticks in eval_time and print the best one when run is in last tick of eval_time
+        if self.phase == BFPhase.INITIAL:
             if self.is_eval_time() and self.is_better(iface):
                 self.best, current_best = self.current, self.current
-                improvements += 1
-                improvement_time = self.time
+                g.improvement_time = round(self.time/1000, 2)
                 velocity = [
                     round(
                     numpy.sum(
@@ -154,6 +156,13 @@ class MainClient(Client):
                 degs = lambda angle_rad: round(to_deg(angle_rad), 3)
                 rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
 
+            if self.is_max_time():                
+                self.goal.print(self, g)
+
+        # Search phase only impacts decision, logic is in initial phase
+        elif self.phase == BFPhase.SEARCH:
+            if self.is_eval_time() and self.is_better(iface):
+                improvements += 1
                 response.decision = BFEvaluationDecision.ACCEPT
                         
             if self.is_past_eval_time():
@@ -334,7 +343,7 @@ class GUI:
         
         imgui.text(f"Bruteforce Best: {round(current_best, 3)} ")
         imgui.text(f"Improvements: {improvements}")
-        imgui.text(f"Car information at {improvement_time}:")
+        imgui.text(f"Car information at {g.improvement_time}:")
         imgui.text(f"Velocity (sideways, vertically, in facing direction): {velocity}")
         imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
         imgui.text("Connection Status: " + (f"Connected to {g.server}" if g.is_registered else "Not Registered"))
@@ -414,7 +423,7 @@ def main():
         if last_finished != client.finished:
             last_finished = client.finished
             if last_finished:
-                print('Finished')
+                print('Crossed finish line')
 
         if client.time != last_time:
             last_time = client.time
