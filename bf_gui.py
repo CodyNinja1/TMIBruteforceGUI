@@ -340,10 +340,11 @@ class GUI:
         imgui.end()
 
     def bf_result(self):
-        # TODO: is this bad programming practises?
+        # thanks shweetz
         # this is to clarify what unit of measurement is currently used
-        #     |           use (m) for height and point bf            | | if we're bfing speed, show (km/h) else (degrees) for nose position |
-        unit = "(m)" if (g.current_goal == 2) or (g.current_goal == 3) else ("(km/h)" if g.current_goal != 1 else "(degrees)")
+        if   (g.current_goal == 0): unit = "(km/h)"
+        elif (g.current_goal == 1): unit = "(degrees)"
+        else:                       unit = "(m)"
 
         imgui.begin("Bruteforce Result", True) 
         
