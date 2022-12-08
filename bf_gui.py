@@ -6,6 +6,7 @@ import imgui
 import math
 import numpy
 import OpenGL.GL as gl
+import os
 import signal
 import struct
 import sys
@@ -38,6 +39,10 @@ class Global:
 
         # Result
         self.improvement_time = 0
+
+        # Other
+        self.save_inputs = False
+        self.save_folder = "current"
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -121,6 +126,7 @@ class MainClient(Client):
         self.lowest_time = iface.get_event_buffer().events_duration
         self.time = -1
         self.best = -1
+        self.iterations = 0
         improvements = 0
 
         g.unpackCoordinates()
@@ -156,18 +162,23 @@ class MainClient(Client):
                 degs = lambda angle_rad: round(to_deg(angle_rad), 3)
                 rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
 
-            if self.is_max_time():                
+            if self.is_max_time():
                 self.goal.print(self, g)
 
         # Search phase only impacts decision, logic is in initial phase
         elif self.phase == BFPhase.SEARCH:
             if self.is_eval_time() and self.is_better(iface):
-                improvements += 1
                 response.decision = BFEvaluationDecision.ACCEPT
-                        
-            if self.is_past_eval_time():
-                if response.decision != BFEvaluationDecision.ACCEPT:
-                    response.decision = BFEvaluationDecision.REJECT
+                improvements += 1
+                self.iterations += 1
+                if g.save_inputs:
+                    self.save_result(filename=f"result_{improvements}.txt", event_buffer=iface.get_event_buffer())
+                
+            elif self.is_past_eval_time():
+                response.decision = BFEvaluationDecision.REJECT
+                self.iterations += 1
+                if g.save_inputs:
+                    self.save_result(filename=f"inputs_{self.iterations}.txt", event_buffer=iface.get_event_buffer())
 
         return response
 
@@ -197,36 +208,36 @@ class MainClient(Client):
         return time_min <= self.time <= time_max
 
     def is_past_eval_time(self):
-        return time_max <= self.time
+        return self.time > time_max
 
     def is_max_time(self):
-        return time_max == self.time
+        return self.time == time_max
 
     def on_checkpoint_count_changed(self, iface: TMInterface, current: int, target: int):
         if current == target:
             self.finished = True
 
-def impl_glfw_init(window_name="TrackMania Bruteforce", width=300, height=300):
-    if not glfw.init():
-        print("Could not initialize OpenGL context")
-        exit(1)
+    def save_result(self, filename: str, event_buffer):
+        # event_buffer is type EventBufferData
 
-    # OS X supports only forward-compatible core profiles from 3.2
-    glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
-    glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
-    glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-    glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
+        # Find TMInterface/Scripts/
+        scripts_dir = os.path.join(os.path.expanduser('~'), "Documents", "TMInterface", "Scripts")
+        if not os.path.isdir(scripts_dir):
+            # try OneDrive path
+            scripts_dir = os.path.join(os.path.expanduser('~'), "OneDrive", "Documents", "TMInterface", "Scripts")            
+            if not os.path.isdir(scripts_dir):
+                print("ERROR: path to Scripts/ not found.")
+                return
+        
+        # Find or create directory to save inputs in this bruteforce session
+        session_dir = os.path.join(scripts_dir, g.save_folder)
+        if not os.path.isdir(session_dir):
+            os.mkdir(session_dir)
 
-    # Create a windowed mode window and its OpenGL context
-    window = glfw.create_window(int(width), int(height), window_name, None, None)
-    glfw.make_context_current(window)
-
-    if not window:
-        glfw.terminate()
-        print("Could not initialize Window")
-        exit(1)
-
-    return window
+        # Write inputs to a file
+        filepath = os.path.join(session_dir, filename)
+        with open(filepath, "w") as f:
+            f.write(event_buffer.to_commands_str())
 
 class GUI:
     def __init__(self):
@@ -255,7 +266,7 @@ class GUI:
             "bf_goal": g.current_goal
         }
 
-        self.window = impl_glfw_init(width=700, height=500)
+        self.window = self.impl_glfw_init(width=700, height=500)
         gl.glClearColor(*self.backgroundColor)
         imgui.create_context()
         self.impl = GlfwRenderer(self.window)
@@ -277,19 +288,27 @@ class GUI:
     #             json.dump(self.settings, s_file) 
     # currently working on this feature, don't remove
 
-    def bf_conditions_gui(self):
-        global min_speed_kmh, min_cp, must_touch_ground
-        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]
-        min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
-        must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
-        
-        # position coordinates
-        g.enablePositionCheck = imgui.checkbox("Enable Position check (car must be inside trigger)", g.enablePositionCheck)[1]
-        
-        if g.enablePositionCheck:
-            input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
-            g.pair1, g.pair2 = input_pair('Trigger corner 1', g.pair1), input_pair('Trigger corner 2', g.pair2)
-            imgui.separator()
+    def impl_glfw_init(self, window_name="TrackMania Bruteforce", width=300, height=300):
+        if not glfw.init():
+            print("Could not initialize OpenGL context")
+            exit(1)
+
+        # OS X supports only forward-compatible core profiles from 3.2
+        glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+        glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
+
+        # Create a windowed mode window and its OpenGL context
+        window = glfw.create_window(int(width), int(height), window_name, None, None)
+        glfw.make_context_current(window)
+
+        if not window:
+            glfw.terminate()
+            print("Could not initialize Window")
+            exit(1)
+
+        return window
 
     def bf_speed_gui(self):
         pass
@@ -311,6 +330,25 @@ class GUI:
 
     def bf_point_gui(self):
         g.point = imgui.input_float3('Point Coordinates', *g.point)[1]
+
+    def bf_conditions_gui(self):
+        global min_speed_kmh, min_cp, must_touch_ground
+        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]
+        min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
+        must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
+        
+        # position coordinates
+        g.enablePositionCheck = imgui.checkbox("Enable Position check (car must be inside trigger)", g.enablePositionCheck)[1]
+        
+        if g.enablePositionCheck:
+            input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
+            g.pair1, g.pair2 = input_pair('Trigger corner 1', g.pair1), input_pair('Trigger corner 2', g.pair2)
+            imgui.separator()
+
+    def bf_other_gui(self):
+        g.save_inputs = imgui.checkbox("Save inputs of every iteration in a folder", g.save_inputs)[1]
+        if g.save_inputs:
+            g.save_folder = imgui.input_text('Saving folder name', g.save_folder, 256)[1]
 
     def bf_settings(self):
         global time_min, time_max
@@ -337,14 +375,19 @@ class GUI:
         imgui.text("Conditions")
         self.bf_conditions_gui()
 
+        imgui.separator()
+        
+        imgui.text("Other")
+        self.bf_other_gui()
+
         imgui.end()
 
     def bf_result(self):
         # thanks shweetz
         # this is to clarify what unit of measurement is currently used
-        if   (g.current_goal == 0): unit = "(km/h)"
-        elif (g.current_goal == 1): unit = "(degrees)"
-        else:                       unit = "(m)"
+        if   g.current_goal == 0: unit = "(km/h)"
+        elif g.current_goal == 1: unit = "(degrees)"
+        else:                     unit = "(m)"
 
         imgui.begin("Bruteforce Result", True) 
         
