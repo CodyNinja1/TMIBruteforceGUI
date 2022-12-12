@@ -1,4 +1,4 @@
-# shoutout to stunt, sai, and shweetz
+# Shoutout to Stunt, SaiMoen, and Shweetz
 
 import colorsys
 import glfw
