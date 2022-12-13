@@ -173,10 +173,10 @@ class MainClient(Client):
                 if g.save_inputs:
                     self.save_result(filename=f"improvement_{improvements}.txt", event_buffer=iface.get_event_buffer())
                 
-            elif self.is_past_eval_time() and not g.save_only_results:
+            elif self.is_past_eval_time():
                 response.decision = BFEvaluationDecision.REJECT
                 self.iterations += 1
-                if g.save_inputs:
+                if g.save_inputs and not g.save_only_results:
                     self.save_result(filename=f"iteration_{self.iterations}.txt", event_buffer=iface.get_event_buffer())
 
         return response
