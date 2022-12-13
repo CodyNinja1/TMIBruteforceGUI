@@ -287,7 +287,7 @@ class GUI:
     #             json.dump(self.settings, s_file) 
     # currently working on this feature, don't remove
 
-    def impl_glfw_init(self, window_name="TrackMania Bruteforce", width=300, height=300):
+    def impl_glfw_init(self, window_name="TrackMania Bruteforce GUI", width=300, height=300):
         if not glfw.init():
             print("Could not initialize OpenGL context")
             exit(1)
@@ -470,7 +470,7 @@ def main():
     last_finished = False
     last_time = 0
     while iface.registered:
-        if last_finished != client.finished:
+        if last_finished != client.finished: # ?????????????????? what is any of this for
             last_finished = client.finished
             if last_finished:
                 print('Crossed finish line')
