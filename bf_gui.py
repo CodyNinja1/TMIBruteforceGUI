@@ -1,4 +1,4 @@
-# shoutout to stunt, sai, and shweetz
+# Shoutout to Stuntlover, SaiMoen, and Shweetz
 
 import colorsys
 import glfw
@@ -43,6 +43,7 @@ class Global:
         # Other
         self.save_inputs = False
         self.save_folder = "current"
+        self.save_only_results = False
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -65,11 +66,9 @@ min_speed_kmh = 0
 min_cp = 0
 must_touch_ground = False
 
-# bf result window (yes)
 current_best = -1
 improvements = 0
 velocity = [0, 0, 0]
-real_speed = 0
 rotation = [0, 0, 0]
 
 def makeGUI():
@@ -172,13 +171,13 @@ class MainClient(Client):
                 improvements += 1
                 self.iterations += 1
                 if g.save_inputs:
-                    self.save_result(filename=f"result_{improvements}.txt", event_buffer=iface.get_event_buffer())
+                    self.save_result(filename=f"improvement_{improvements}.txt", event_buffer=iface.get_event_buffer())
                 
             elif self.is_past_eval_time():
                 response.decision = BFEvaluationDecision.REJECT
                 self.iterations += 1
-                if g.save_inputs:
-                    self.save_result(filename=f"inputs_{self.iterations}.txt", event_buffer=iface.get_event_buffer())
+                if g.save_inputs and not g.save_only_results:
+                    self.save_result(filename=f"iteration_{self.iterations}.txt", event_buffer=iface.get_event_buffer())
 
         return response
 
@@ -337,18 +336,19 @@ class GUI:
         min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
         must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
         
-        # position coordinates
-        g.enablePositionCheck = imgui.checkbox("Enable Position check (car must be inside trigger)", g.enablePositionCheck)[1]
+        # Position Check
+        g.enablePositionCheck = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.enablePositionCheck)[1]
         
         if g.enablePositionCheck:
             input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
-            g.pair1, g.pair2 = input_pair('Trigger corner 1', g.pair1), input_pair('Trigger corner 2', g.pair2)
+            g.pair1, g.pair2 = input_pair('Trigger Corner 1', g.pair1), input_pair('Trigger Corner 2', g.pair2)
             imgui.separator()
 
     def bf_other_gui(self):
-        g.save_inputs = imgui.checkbox("Save inputs of every iteration in a folder", g.save_inputs)[1]
+        g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
         if g.save_inputs:
-            g.save_folder = imgui.input_text('Saving folder name', g.save_folder, 256)[1]
+            g.save_folder = imgui.input_text('Folder Name', g.save_folder, 256)[1]
+            g.save_only_results = imgui.checkbox("Save only improvements", g.save_only_results)[1]
 
     def bf_settings(self):
         global time_min, time_max
