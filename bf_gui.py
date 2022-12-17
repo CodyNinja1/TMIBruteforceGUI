@@ -470,17 +470,11 @@ def main():
     while not iface.registered:
         time.sleep(0)
 
-#    last_finished = False
-#    last_time = 0
-#    while iface.registered:
-#        if last_finished != client.finished: # ?????????????????? what is any of this for
-#            last_finished = client.finished
-#            if last_finished:
-#                print('Crossed finish line')
-
-#        if client.time != last_time:
-#            last_time = client.time
-#        time.sleep(0)
+    last_time = 0
+    while iface.registered:
+        if client.time != last_time:
+            last_time = client.time
+        time.sleep(0)
 
 if __name__ == '__main__':
     x = threading.Thread(target=makeGUI, daemon=True)
