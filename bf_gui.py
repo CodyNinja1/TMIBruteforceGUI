@@ -22,6 +22,8 @@ from tminterface.client import Client
 from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
 
 class Global:
+    # Add your variables you want to use globally in here
+
     def __init__(self):
         self.is_registered = False
         self.server = ""
@@ -342,7 +344,6 @@ class GUI:
         if g.enablePositionCheck:
             input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
             g.pair1, g.pair2 = input_pair('Trigger Corner 1', g.pair1), input_pair('Trigger Corner 2', g.pair2)
-            imgui.separator()
 
     def bf_other_gui(self):
         g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
@@ -352,7 +353,7 @@ class GUI:
 
     def bf_settings(self):
         global time_min, time_max
-        imgui.begin("Bruteforce Settings", True)
+        imgui.begin("Evaluation Settings", True)
 
         imgui.text("Goal and parameters")
         g.current_goal = imgui.combo("Bruteforce Goal", g.current_goal, self.goals)[1]
@@ -389,16 +390,18 @@ class GUI:
         elif g.current_goal == 1: unit = "(degrees)"
         else:                     unit = "(m)"
 
-        imgui.begin("Bruteforce Result", True) 
-        
+        imgui.begin("Bruteforce Info", True)
+
+        imgui.text("Connection Status: " + (f"Connected to {g.server}" if g.is_registered else "Not Registered"))
+        imgui.separator()
+
         imgui.text(f"Bruteforce Best: {round(current_best, 3)} {unit}")
+
         imgui.text(f"Improvements: {improvements}")
         imgui.text(f"Car information at {g.improvement_time}:")
-        imgui.text(f"Velocity (sideways, vertically, in facing direction): {velocity}")
-        imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
-        imgui.text("Connection Status: " + (f"Connected to {g.server}" if g.is_registered else "Not Registered"))
-        
         imgui.separator()
+        imgui.text(f"Velocity (x, y, z): {velocity}")
+        imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
         
         imgui.end()
     
@@ -467,17 +470,17 @@ def main():
     while not iface.registered:
         time.sleep(0)
 
-    last_finished = False
-    last_time = 0
-    while iface.registered:
-        if last_finished != client.finished: # ?????????????????? what is any of this for
-            last_finished = client.finished
-            if last_finished:
-                print('Crossed finish line')
+#    last_finished = False
+#    last_time = 0
+#    while iface.registered:
+#        if last_finished != client.finished: # ?????????????????? what is any of this for
+#            last_finished = client.finished
+#            if last_finished:
+#                print('Crossed finish line')
 
-        if client.time != last_time:
-            last_time = client.time
-        time.sleep(0)
+#        if client.time != last_time:
+#            last_time = client.time
+#        time.sleep(0)
 
 if __name__ == '__main__':
     x = threading.Thread(target=makeGUI, daemon=True)
