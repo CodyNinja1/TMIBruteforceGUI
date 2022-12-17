@@ -281,15 +281,6 @@ class GUI:
 
         self.loop()
 
-    # def save_settings(self, file_location):
-    #     with open(file_location, "r+") as s_file:
-    #             json.dump(self.settings, s_file)
-
-    # def load_settings(self, file_location):
-    #     with open(file_location, "r") as s_file:
-    #             json.dump(self.settings, s_file)
-    # currently working on this feature, don't remove
-
     def save_settings(self):
         settings = {
             "current_goal": g.current_goal,
