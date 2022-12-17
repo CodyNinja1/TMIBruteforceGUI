@@ -12,6 +12,7 @@ import struct
 import sys
 import threading
 import time
+import json
 
 from imgui.integrations.glfw import GlfwRenderer
 
@@ -42,10 +43,17 @@ class Global:
         # Result
         self.improvement_time = 0
 
-        # Other
+        # Saving Inputs
         self.save_inputs = False
         self.save_folder = "current"
         self.save_only_results = False
+
+        # Other
+        self.time_min = 0
+        self.time_max = 0
+        self.min_speed_kmh = 0
+        self.min_cp = 0
+        self.must_touch_ground = False
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -60,13 +68,6 @@ class Global:
 
 
 g = Global()
-
-time_min = 0
-time_max = time_min
-
-min_speed_kmh = 0
-min_cp = 0
-must_touch_ground = False
 
 current_best = -1
 improvements = 0
@@ -135,12 +136,12 @@ class MainClient(Client):
         if g.current_goal == 1: self.goal = GoalNosepos()
         if g.current_goal == 2: self.goal = GoalHeight()
         if g.current_goal == 3: self.goal = GoalPoint()
-    
+
     def on_bruteforce_evaluate(self, iface, info: BFEvaluationInfo) -> BFEvaluationResponse:
         global current_best, improvements, velocity, rotation
         self.time = info.time
         self.phase = info.phase
-        
+
         response = BFEvaluationResponse()
         response.decision = BFEvaluationDecision.DO_NOTHING
 
@@ -174,7 +175,7 @@ class MainClient(Client):
                 self.iterations += 1
                 if g.save_inputs:
                     self.save_result(filename=f"improvement_{improvements}.txt", event_buffer=iface.get_event_buffer())
-                
+
             elif self.is_past_eval_time():
                 response.decision = BFEvaluationDecision.REJECT
                 self.iterations += 1
@@ -189,13 +190,13 @@ class MainClient(Client):
         self.vel = numpy.linalg.norm(self.state.velocity)
 
         # Conditions
-        if min_speed_kmh > self.vel * 3.6: # Min speed
+        if g.min_speed_kmh > self.vel * 3.6: # Min speed
             return False
 
-        if min_cp > get_nb_cp(self.state): # Min CP
+        if g.min_cp > get_nb_cp(self.state): # Min CP
             return False
 
-        if must_touch_ground and nb_wheels_on_ground(self.state) == 0: # Touch ground
+        if g.must_touch_ground and nb_wheels_on_ground(self.state) == 0: # Touch ground
             return False
 
         if g.enablePositionCheck and not g.isCarInTrigger(self.state): # Position
@@ -206,13 +207,13 @@ class MainClient(Client):
         return self.goal.is_better(self, g)
 
     def is_eval_time(self):
-        return time_min <= self.time <= time_max
+        return g.time_min <= self.time <= g.time_max
 
     def is_past_eval_time(self):
-        return self.time > time_max
+        return self.time > g.time_max
 
     def is_max_time(self):
-        return self.time == time_max
+        return self.time == g.time_max
 
     def on_checkpoint_count_changed(self, iface: TMInterface, current: int, target: int):
         if current == target:
@@ -225,11 +226,11 @@ class MainClient(Client):
         scripts_dir = os.path.join(os.path.expanduser('~'), "Documents", "TMInterface", "Scripts")
         if not os.path.isdir(scripts_dir):
             # try OneDrive path
-            scripts_dir = os.path.join(os.path.expanduser('~'), "OneDrive", "Documents", "TMInterface", "Scripts")            
+            scripts_dir = os.path.join(os.path.expanduser('~'), "OneDrive", "Documents", "TMInterface", "Scripts")
             if not os.path.isdir(scripts_dir):
                 print("ERROR: path to Scripts/ not found.")
                 return
-        
+
         # Find or create directory to save inputs in this bruteforce session
         session_dir = os.path.join(scripts_dir, g.save_folder)
         if not os.path.isdir(session_dir):
@@ -253,13 +254,13 @@ class GUI:
         self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
         self.backgroundColor = [0.25, 0.5, 0.75, 0.5]
 
-        self.settings = { 
+        self.settings = {
             "font": self.fontPath,
             "color": self.color,
             "rgb_speed": self.colorChange,
             "rgb_e": self.rgbScroll,
             "yaw_e": self.enableExtraYaw,
-            "yaw": g.extra_yaw, 
+            "yaw": g.extra_yaw,
             "coordsCheck": g.enablePositionCheck,
             "pair1": g.pair1,
             "pair2": g.pair2,
@@ -279,15 +280,61 @@ class GUI:
             self.impl.refresh_font_texture()
 
         self.loop()
-    
+
     # def save_settings(self, file_location):
     #     with open(file_location, "r+") as s_file:
     #             json.dump(self.settings, s_file)
-    
+
     # def load_settings(self, file_location):
     #     with open(file_location, "r") as s_file:
-    #             json.dump(self.settings, s_file) 
+    #             json.dump(self.settings, s_file)
     # currently working on this feature, don't remove
+
+    def save_settings(self):
+        settings = {
+            "current_goal": g.current_goal,
+            "extra_yaw": g.extra_yaw,
+            "point": g.point,
+
+            "enablePositionCheck": g.enablePositionCheck,
+            "pair1": g.pair1,
+            "pair2": g.pair2,
+
+            "save_inputs": g.save_inputs,
+            "save_folder": g.save_folder,
+            "save_only_results": g.save_only_results,
+
+            "time_min": g.time_min,
+            "time_max": g.time_max,
+            "min_speed_kmh": g.min_speed_kmh,
+            "min_cp": g.min_cp,
+            "must_touch_ground": g.must_touch_ground
+        }
+
+        with open("settings.json", "w") as s:
+            json.dump(settings, s)
+
+    def load_settings(self):
+        with open("settings.json", "r") as set:
+            settings = json.load(set)
+
+            g.current_goal = settings["current_goal"]
+            g.extra_yaw = settings["extra_yaw"]
+            g.point = settings["point"]
+
+            g.enablePositionCheck = settings["enablePositionCheck"]
+            g.pair1 = settings["pair1"]
+            g.pair2 = settings["pair2"]
+
+            g.save_inputs = settings["save_inputs"]
+            g.save_folder = settings["save_folder"]
+            g.save_only_results = settings["save_only_results"]
+
+            g.time_min = settings["time_min"]
+            g.time_max = settings["time_max"]
+            g.min_speed_kmh = settings["min_speed_kmh"]
+            g.min_cp = settings["min_cp"]
+            g.must_touch_ground = settings["must_touch_ground"]
 
     def impl_glfw_init(self, window_name="TrackMania Bruteforce GUI", width=300, height=300):
         if not glfw.init():
@@ -319,13 +366,10 @@ class GUI:
 
     def bf_nose_gui(self):
         self.enableExtraYaw = imgui.checkbox("Enable Custom Yaw Value", self.enableExtraYaw)[1]
-        
-        imgui.separator()
-        
+
         if self.enableExtraYaw:
             g.strategy = "custom"
             g.extra_yaw = imgui.input_float('Yaw', g.extra_yaw)[1]
-            imgui.separator()
         else:
             g.strategy = "any"
 
@@ -333,14 +377,13 @@ class GUI:
         g.point = imgui.input_float3('Point Coordinates', *g.point)[1]
 
     def bf_conditions_gui(self):
-        global min_speed_kmh, min_cp, must_touch_ground
-        min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', min_speed_kmh)[1]
-        min_cp = imgui.input_int('Minimum Checkpoints', min_cp)[1]
-        must_touch_ground = imgui.checkbox("Must touch ground", must_touch_ground)[1]
-        
+        g.min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', g.min_speed_kmh)[1]
+        g.min_cp = imgui.input_int('Minimum Checkpoints', g.min_cp)[1]
+        g.must_touch_ground = imgui.checkbox("Must touch ground", g.must_touch_ground)[1]
+
         # Position Check
         g.enablePositionCheck = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.enablePositionCheck)[1]
-        
+
         if g.enablePositionCheck:
             input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
             g.pair1, g.pair2 = input_pair('Trigger Corner 1', g.pair1), input_pair('Trigger Corner 2', g.pair2)
@@ -351,8 +394,17 @@ class GUI:
             g.save_folder = imgui.input_text('Folder Name', g.save_folder, 256)[1]
             g.save_only_results = imgui.checkbox("Save only improvements", g.save_only_results)[1]
 
+    def save_settings_gui(self):
+        save = imgui.button("Save Settings")
+        if save:
+            self.save_settings()
+
+    def load_settings_gui(self):
+        load = imgui.button("Load Settings")
+        if load:
+            self.load_settings()
+
     def bf_settings(self):
-        global time_min, time_max
         imgui.begin("Evaluation Settings", True)
 
         imgui.text("Goal and parameters")
@@ -361,34 +413,40 @@ class GUI:
         elif g.current_goal == 1: self.bf_nose_gui()
         elif g.current_goal == 2: self.bf_height_gui()
         elif g.current_goal == 3: self.bf_point_gui()
-        
+
         imgui.separator()
 
         imgui.text("Evaluation time")
         timetext = lambda s, t: round(imgui.input_float(s, t/1000)[1] * 1000, 3)
-        time_min = timetext("Evaluation start (s)", time_min)
-        time_max = timetext("Evaluation end (s)", time_max)
-        if time_min > time_max:
-            time_max = time_min
+        g.time_min = timetext("Evaluation start (s)", g.time_min)
+        g.time_max = timetext("Evaluation end (s)", g.time_max)
+        if g.time_min > g.time_max:
+            g.time_max = g.time_min
 
         imgui.separator()
-        
+
         imgui.text("Conditions")
         self.bf_conditions_gui()
 
         imgui.separator()
-        
+
         imgui.text("Other")
         self.bf_other_gui()
+
+        imgui.separator()
+
+        imgui.text("Settings")
+        self.save_settings_gui()
+        self.load_settings_gui()
 
         imgui.end()
 
     def bf_result(self):
         # thanks shweetz
         # this is to clarify what unit of measurement is currently used
-        if   g.current_goal == 0: unit = "(km/h)"
-        elif g.current_goal == 1: unit = "(degrees)"
-        else:                     unit = "(m)"
+        if   g.current_goal == 0: unit = "(km/h)" # Speed
+        elif g.current_goal == 1: unit = "(degrees)" # Nosepos
+        else:                     unit = "(m)" # Point/Height
 
         imgui.begin("Bruteforce Info", True)
 
@@ -402,15 +460,15 @@ class GUI:
         imgui.separator()
         imgui.text(f"Velocity (x, y, z): {velocity}")
         imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
-        
+
         imgui.end()
-    
+
     def customize(self):
         imgui.begin("Customize", True)
 
         if imgui.button("Start RGB scroll" if not self.rgbScroll else "Stop RGB Scroll"):
             self.rgbScroll = not self.rgbScroll
-        
+
         if self.rgbScroll:
             if not any(self.color[:3]): self.color = [(i + 1) / 4 for i in range(4)]
             self.colorChange = imgui.slider_float(
@@ -418,7 +476,7 @@ class GUI:
                 min_value=0, max_value=32,
                 power=1
             )[1]
-        
+
         else:
             self.color = list(imgui.color_edit4("Background", *self.color, show_alpha=False)[1])
             self.backgroundColor = self.color.copy()
@@ -477,6 +535,7 @@ def main():
         time.sleep(0)
 
 if __name__ == '__main__':
-    x = threading.Thread(target=makeGUI, daemon=True)
-    x.start()
+    GUI_thread = threading.Thread(target=makeGUI, daemon=True)
+    GUI_thread.start()
+
     main()
