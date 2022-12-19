@@ -1,4 +1,4 @@
-# Shoutout to Stuntlover, SaiMoen, and Shweetz
+# Shoutout to Stuntlover, SaiMoen, Shweetz, and lambda
 
 import colorsys
 import glfw
