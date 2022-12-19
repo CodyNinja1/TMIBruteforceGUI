@@ -13,9 +13,6 @@ class GoalSpeed:
 
         return client.best == -1 or client.current > client.best
 
-    def print(self, client, g):
-        print(f"New best speed at {g.improvement_time} s: {client.current} km/h")
-
 class GoalNosepos:
     def is_better(self, client, g):
         car_yaw, car_pitch, car_roll = client.state.yaw_pitch_roll
