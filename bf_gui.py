@@ -164,8 +164,8 @@ class MainClient(Client):
                 degs = lambda angle_rad: round(to_deg(angle_rad), 3)
                 rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
 
-            if self.is_max_time():
-                self.goal.print(self, g)
+#             if self.is_max_time():
+#                 self.goal.print(self, g)
 
         # Search phase only impacts decision, logic is in initial phase
         elif self.phase == BFPhase.SEARCH:
