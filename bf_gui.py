@@ -383,7 +383,7 @@ class GUI:
         g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
         if g.save_inputs:
             g.save_folder = imgui.input_text('Folder Name', g.save_folder, 256)[1]
-            g.save_only_results = imgui.checkbox("Save only improvements", g.save_only_results)[1]
+            g.save_only_results = imgui.checkbox("Save only improvements separately", g.save_only_results)[1]
 
     def save_settings_gui(self):
         save = imgui.button("Save Settings")
