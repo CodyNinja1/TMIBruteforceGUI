@@ -4,8 +4,6 @@ This script provides an easy way to use bruteforce scripts in TMInterface using 
 ![Bruteforce GUI Script Window](https://cdn.discordapp.com/attachments/1023241364751777904/1052246409245626448/script.png)
 
 # How to use
-Install the Visual Studio C++ Redistributable: https://aka.ms/vs/17/release/vc_redist.x86.exe
-
 Install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K) or from the [official Python website](https://www.python.org/downloads/release/python-3111/)
 
 After Python is done installing or you already have Python, press the big green `Code` button on this page -> Click `Download ZIP`, extract the ZIP into a folder
