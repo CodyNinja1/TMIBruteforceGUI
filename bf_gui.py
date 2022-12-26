@@ -1,4 +1,4 @@
-# Shoutout to Stuntlover, SaiMoen and Shweetz
+# Shoutout to Stuntlover, SaiMoen, and Shweetz
 
 import colorsys
 import glfw
@@ -54,6 +54,7 @@ class Global:
         self.min_speed_kmh = 0
         self.min_cp = 0
         self.must_touch_ground = False
+        self.settings_file_name = "settings.json"
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -164,8 +165,8 @@ class MainClient(Client):
                 degs = lambda angle_rad: round(to_deg(angle_rad), 3)
                 rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
 
-#             if self.is_max_time():
-#                 self.goal.print(self, g)
+            if self.is_max_time():
+                self.goal.print(self, g)
 
         # Search phase only impacts decision, logic is in initial phase
         elif self.phase == BFPhase.SEARCH:
@@ -299,14 +300,15 @@ class GUI:
             "time_max": g.time_max,
             "min_speed_kmh": g.min_speed_kmh,
             "min_cp": g.min_cp,
-            "must_touch_ground": g.must_touch_ground
+            "must_touch_ground": g.must_touch_ground,
+            "settings_file_name": g.settings_file_name
         }
 
-        with open("settings.json", "w") as s:
+        with open(g.settings_file_name, "w") as s:
             json.dump(settings, s)
 
     def load_settings(self):
-        with open("settings.json", "r") as set:
+        with open(g.settings_file_name, "r") as set:
             settings = json.load(set)
 
             g.current_goal = settings["current_goal"]
@@ -326,6 +328,7 @@ class GUI:
             g.min_speed_kmh = settings["min_speed_kmh"]
             g.min_cp = settings["min_cp"]
             g.must_touch_ground = settings["must_touch_ground"]
+            g.settings_file_name = settings["settings_file_name"]
 
     def impl_glfw_init(self, window_name="TrackMania Bruteforce GUI", width=300, height=300):
         if not glfw.init():
@@ -395,6 +398,9 @@ class GUI:
         if load:
             self.load_settings()
 
+    def settings_file_name_gui(self):
+        g.settings_file_name = imgui.input_text("Settings File Name", g.settings_file_name, 256)[1]
+
     def bf_settings(self):
         imgui.begin("Evaluation Settings", True)
 
@@ -429,6 +435,7 @@ class GUI:
         imgui.text("Settings")
         self.save_settings_gui()
         self.load_settings_gui()
+        self.settings_file_name_gui()
 
         imgui.end()
 
