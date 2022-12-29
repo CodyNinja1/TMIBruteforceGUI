@@ -1,7 +1,7 @@
 # TMIBruteforceGUI
 This script provides an easy way to use bruteforce scripts in TMInterface using a GUI! No more changing variables in the source code!
 
-![Bruteforce GUI Script Window](https://cdn.discordapp.com/attachments/1023241364751777904/1052246409245626448/script.png)
+![Bruteforce GUI Script Window](https://cdn.discordapp.com/attachments/1023241364751777904/1052246409245626448/script.png) 
 
 # How to use
 Install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K) or from the [official Python website](https://www.python.org/downloads/release/python-3111/)
