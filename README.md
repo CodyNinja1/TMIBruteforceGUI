@@ -10,7 +10,9 @@ After Python is done installing or you already have Python, press the big green 
 
 After you've done that, open your Command Prompt/Terminal in the extracted folder and type `pip install -r requirements.txt` (or `python -m pip install -r requirements.txt` if pip doesn't work in your cmd/terminal, after those are done installing you can open TMInterface.
 
-Open the `bf_gui.py` file (with python), now you should have a GUI on your screen! Select your bruteforce goal of choice, change the settings and validate a replay. Happy bruteforcing! :partying_face:
+In that same Command Prompt/Terminal Process, type 'python bf_gui.py' and hit enter. 
+
+Now you should have a GUI on your screen! Select your bruteforce goal of choice, change the settings and validate a replay. Happy bruteforcing! :partying_face:
 
 Huge thanks to Shweetz, Sai-Moen, and Stuntlover for actively working on this project!
 
