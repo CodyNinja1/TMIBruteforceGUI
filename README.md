@@ -21,7 +21,7 @@ In that same Command Prompt/Terminal Process, type `python bf_gui.py` and hit en
 
 Now you should have a GUI on your screen! Select your bruteforce goal of choice, change the settings and validate a replay. Happy bruteforcing! :partying_face:
 
-Huge thanks to Shweetz, Sai-Moen, and Stuntlover for actively working on this project!
+Huge thanks to Shweetz, Sai-Moen, and Stuntlover (and Mekk) for actively working on this project!
 
 
 We are actively trying to improve the tool in any way we can, whether it's adding new scripts, fixing bugs etc
