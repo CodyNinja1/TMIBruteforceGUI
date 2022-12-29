@@ -6,7 +6,9 @@ This script provides an easy way to use bruteforce scripts in TMInterface using 
 # How to use
 First, install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K), or from the [official Python website](https://www.python.org/downloads/release/python-3111/).
 
-After Python is done installing or you already have Python, press the big green `Code` button at the top this page -> Click the `Download ZIP` option, and extract the ZIP into a folder
+After Python is done installing or you already have Python, press the big green `Code` button at the top this page, then click the `Download ZIP` option. 
+
+Once the ZIP is downloaded, extract it into a folder.
 
 After you've done that, open your Command Prompt/Terminal in the extracted folder and type:\
 `pip install -r requirements.txt` **or** `python -m pip install -r requirements.txt`
