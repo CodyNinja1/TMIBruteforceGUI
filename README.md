@@ -15,3 +15,12 @@ Open the `bf_gui.py` file (with python), now you should have a GUI on your scree
 Huge thanks to Shweetz, Sai-Moen, and Stuntlover for actively working on this project!
 
 (We are actively trying to improve the tool in any way we can, if it's adding a new script, fixing bugs etc, if you have any suggestions feel free to make a pull request or open an issue if you are having trouble with something)
+
+## Custom Scripts currently added
+1. Speed
+2. Nosebug Position
+3. Height
+4. Minimum distance from point
+
+## Custom Scripts coming soon
+1. Precise Finish
