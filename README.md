@@ -44,7 +44,7 @@ If you have any suggestions feel free to make a pull request or open an issue
 
 ## Contributors
 <!-- Copy-paste in your Readme.md file -->
-<strong>CodyNinja1
+<strong>CodyNinja1 (JailMan)
 </strong>
 <br>
 <a href = "https://github.com/Tanu-N-Prabhu/Python/graphs/contributors">
