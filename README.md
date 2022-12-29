@@ -8,7 +8,12 @@ First, install Python, either from the [Microsoft Store](https://apps.microsoft.
 
 After Python is done installing or you already have Python, press the big green `Code` button at the top this page -> Click the `Download ZIP` option, and extract the ZIP into a folder
 
-After you've done that, open your Command Prompt/Terminal in the extracted folder and type `pip install -r requirements.txt` (or `python -m pip install -r requirements.txt` if pip doesn't work in your Command Prompt/Terminal), after those are done installing you can open TMInterface.
+After you've done that, open your Command Prompt/Terminal in the extracted folder and type:\
+`pip install -r requirements.txt`
+**or**
+`python -m pip install -r requirements.txt` if pip doesn't work in your Command Prompt/Terminal. 
+
+After those are done installing you can open TMInterface.
 
 In that same Command Prompt/Terminal Process, type `python bf_gui.py` and hit enter. 
 
