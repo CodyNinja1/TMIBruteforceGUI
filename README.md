@@ -30,6 +30,7 @@ If you have any suggestions feel free to make a pull request or open an issue if
 
 <br>
 #    ‎ ‎ 
+<br>
 ### Custom Scripts currently supported
 1. Speed
 2. Nosebug Position
