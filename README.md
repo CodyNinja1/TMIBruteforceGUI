@@ -1,7 +1,7 @@
 # TMIBruteforceGUI
 This script provides an easy way to use bruteforce scripts in TMInterface using a GUI! No more changing variables in the source code!
 
-![Bruteforce GUI Script Window](https://cdn.discordapp.com/attachments/1023241364751777904/1052246409245626448/script.png)
+![Bruteforce GUI Script Window](https://cdn.discordapp.com/attachments/956957837366538290/1058045104713125918/image.png)
 
 ---
 
