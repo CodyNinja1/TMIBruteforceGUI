@@ -26,6 +26,8 @@ We are actively trying to improve the tool in any way we can, whether it's addin
 
 If you have any suggestions feel free to make a pull request or open an issue
 
+---
+
 ### Custom Scripts currently supported
 - Speed
 - Nosebug Position
@@ -36,3 +38,4 @@ If you have any suggestions feel free to make a pull request or open an issue
 ### Custom Scripts coming soon
 - Precise Finish
 
+---
