@@ -51,7 +51,7 @@ If you have any suggestions feel free to make a pull request or open an issue
   <img src = "https://avatars.githubusercontent.com/u/82186696?v=1" alt="Image" height="100" width="100">
 </a>
 
-<strong>Stuntlover
+<strong>Stuntlover-TM
 </strong>
 <br>
 <a href = "https://github.com/Tanu-N-Prabhu/Python/graphs/contributors">
