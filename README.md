@@ -35,6 +35,8 @@ If you have any suggestions feel free to make a pull request or open an issue if
 2. Nosebug Position
 3. Height
 4. Minimum distance from point
+<br>
 
 ### Custom Scripts coming soon
 1. Precise Finish
+<br>
