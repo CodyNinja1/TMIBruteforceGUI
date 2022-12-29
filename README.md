@@ -18,8 +18,8 @@ Huge thanks to Shweetz, Sai-Moen, and Stuntlover for actively working on this pr
 
 
 We are actively trying to improve the tool in any way we can, whether it is:\
-Adding a new script\
-Fixing bugs etc
+ - Adding a new script\
+ - Fixing bugs etc
 
 If you have any suggestions feel free to make a pull request or open an issue if you are having trouble with something
 
