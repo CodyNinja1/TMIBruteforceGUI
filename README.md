@@ -29,12 +29,12 @@ We are actively trying to improve the tool in any way we can, whether it is:
 If you have any suggestions feel free to make a pull request or open an issue if you are having trouble with something
 
 ### Custom Scripts currently supported
-1. Speed
-2. Nosebug Position
-3. Height
-4. Minimum distance from point
+- Speed
+- Nosebug Position
+- Height
+- Minimum distance from point
 
 
 ### Custom Scripts coming soon
-1. Precise Finish
+- Precise Finish
 
