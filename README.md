@@ -12,8 +12,7 @@ After Python is done installing or you already have Python, press the big green 
 
 Once the ZIP is downloaded, extract it into a folder.
 
-After you've done that, open your Command Prompt/Terminal in the extracted folder and type:\
-`pip install -r requirements.txt` **or** `py -m pip install -r requirements.txt`
+After you've done that, open your Command Prompt/Terminal in the extracted folder and type run `py -m pip install -r requirements.txt`
 
 After those are done installing you can open TMInterface.
 
