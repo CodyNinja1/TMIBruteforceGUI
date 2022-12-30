@@ -13,6 +13,9 @@ class GoalSpeed:
 
         return client.best == -1 or client.current > client.best
 
+    def print(self, client, g):
+        print(f"New best speed at {g.improvement_time} s: {client.best} km/h")
+
 class GoalNosepos:
     def is_better(self, client, g):
         car_yaw, car_pitch, car_roll = client.state.yaw_pitch_roll
@@ -38,7 +41,7 @@ class GoalNosepos:
         return client.best == -1 or client.current < client.best
 
     def print(self, client, g):
-        print(f"New best nosepos at {g.improvement_time} s: {client.current}°")
+        print(f"New best nosepos at {g.improvement_time} s: {client.best}°")
 
 class GoalHeight:
     def is_better(self, client, g):
@@ -47,7 +50,7 @@ class GoalHeight:
         return client.best == -1 or client.current > client.best
 
     def print(self, client, g):
-        print(f"New best height at {g.improvement_time} s: {client.current} m")
+        print(f"New best height at {g.improvement_time} s: {client.best} m")
 
 class GoalPoint:
     def is_better(self, client, g):
@@ -56,7 +59,7 @@ class GoalPoint:
         return client.best == -1 or client.current < client.best
 
     def print(self, client, g):
-        print(f"New best distance at {g.improvement_time} s: {math.sqrt(client.current)} m")
+        print(f"New best distance at {g.improvement_time} s: {math.sqrt(client.best)} m")
 
 # TODO add specific GUI here (somehow)
 

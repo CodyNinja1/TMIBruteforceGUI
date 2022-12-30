@@ -129,6 +129,7 @@ class MainClient(Client):
         self.lowest_time = iface.get_event_buffer().events_duration
         self.time = -1
         self.best = -1
+        self.current = -1
         self.iterations = 0
         improvements = 0
 
@@ -146,10 +147,15 @@ class MainClient(Client):
         response = BFEvaluationResponse()
         response.decision = BFEvaluationDecision.DO_NOTHING
 
+        if g.time_min > self.time: # early return
+            return response
+
+        self.state = iface.get_simulation_state()
+
         # Initial phase (base run + after every ACCEPT improvement)
         # Check the all the ticks in eval_time and print the best one when run is in last tick of eval_time
         if self.phase == BFPhase.INITIAL:
-            if self.is_eval_time() and self.is_better(iface):
+            if self.is_eval_time() and self.is_better():
                 self.best, current_best = self.current, self.current
                 g.improvement_time = round(self.time/1000, 2)
                 velocity = [
@@ -163,6 +169,7 @@ class MainClient(Client):
                     for idx in range(3)
                 ]
                 degs = lambda angle_rad: round(to_deg(angle_rad), 3)
+                self.yaw_rad, self.pitch_rad, self.roll_rad = self.state.yaw_pitch_roll
                 rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
 
             if self.is_max_time():
@@ -170,7 +177,7 @@ class MainClient(Client):
 
         # Search phase only impacts decision, logic is in initial phase
         elif self.phase == BFPhase.SEARCH:
-            if self.is_eval_time() and self.is_better(iface):
+            if self.is_eval_time() and self.is_better():
                 response.decision = BFEvaluationDecision.ACCEPT
                 improvements += 1
                 self.iterations += 1
@@ -185,13 +192,9 @@ class MainClient(Client):
 
         return response
 
-    def is_better(self, iface):
-        self.state = iface.get_simulation_state()
-        self.yaw_rad, self.pitch_rad, self.roll_rad = self.state.yaw_pitch_roll
-        self.vel = numpy.linalg.norm(self.state.velocity)
-
+    def is_better(self):
         # Conditions
-        if g.min_speed_kmh > self.vel * 3.6: # Min speed
+        if g.min_speed_kmh > numpy.linalg.norm(self.state.velocity) * 3.6: # Min speed
             return False
 
         if g.min_cp > get_nb_cp(self.state): # Min CP
