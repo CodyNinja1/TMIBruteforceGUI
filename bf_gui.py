@@ -158,19 +158,8 @@ class MainClient(Client):
                 g.current_best = self.current
                 g.improvement_time = round(self.time/1000, 2)
                 g.position = [round(pos, 3) for pos in self.state.position]
-                g.velocity = [
-                    round(
-                    numpy.sum(
-                        [
-                            self.state.velocity[i] * self.state.rotation_matrix[i][idx]
-                            for i in range(3)
-                        ]
-                    ), 3)
-                    for idx in range(3)
-                ]
-                degs = lambda angle_rad: round(to_deg(angle_rad), 3)
-                self.yaw_rad, self.pitch_rad, self.roll_rad = self.state.yaw_pitch_roll
-                g.rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
+                g.velocity = [round(vel, 3) for vel in self.state.velocity]
+                g.rotation = [round(to_deg(ypr), 3) for ypr in self.state.yaw_pitch_roll]
 
             if self.is_max_time():
                 self.goal.print(g)
@@ -454,7 +443,10 @@ class GUI:
         imgui.text("Connection Status: " + (f"Connected to {g.server}" if g.is_registered else "Not Registered"))
         imgui.separator()
 
-        imgui.text(f"Bruteforce Best: {round(g.current_best, 3)} {unit}")
+        best = g.current_best
+        if g.current_goal == 3 and best > 0: # Point
+            best = math.sqrt(best)
+        imgui.text(f"Bruteforce Best: {round(best, 3)} {unit}")
 
         imgui.text(f"Improvements: {g.improvements}")
         imgui.text(f"Car information at {g.improvement_time}:")
