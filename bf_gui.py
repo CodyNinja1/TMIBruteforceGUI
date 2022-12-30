@@ -34,14 +34,24 @@ class Global:
         self.strategy = "any"
         self.extra_yaw = 0
         self.point = [0, 0, 0]
+        self.time_min = 0
+        self.time_max = 0
 
         # Conditions
         self.enablePositionCheck = False
         self.pair1 = [0, 0, 0]
         self.pair2 = [999, 999, 999]
+        self.min_speed_kmh = 0
+        self.min_cp = 0
+        self.must_touch_ground = False
 
         # Result
+        self.current_best = -1
         self.improvement_time = 0
+        self.improvements = 0
+        self.position = [0, 0, 0]
+        self.velocity = [0, 0, 0]
+        self.rotation = [0, 0, 0]
 
         # Saving Inputs
         self.save_inputs = False
@@ -49,11 +59,6 @@ class Global:
         self.save_only_results = False
 
         # Other
-        self.time_min = 0
-        self.time_max = 0
-        self.min_speed_kmh = 0
-        self.min_cp = 0
-        self.must_touch_ground = False
         self.settings_file_name = "settings.json"
 
     def unpackCoordinates(self):
@@ -69,11 +74,6 @@ class Global:
 
 
 g = Global()
-
-current_best = -1
-improvements = 0
-velocity = [0, 0, 0]
-rotation = [0, 0, 0]
 
 def makeGUI():
     GUI()
@@ -125,12 +125,13 @@ class MainClient(Client):
     def on_simulation_begin(self, iface):
         iface.execute_command('set controller bruteforce')
 
-        global improvements
         self.lowest_time = iface.get_event_buffer().events_duration
         self.time = -1
-        self.best = -1
+        self.current = -1
         self.iterations = 0
-        improvements = 0
+        g.current_best = -1
+        g.improvement_time = -1
+        g.improvements = 0
 
         g.unpackCoordinates()
         if g.current_goal == 0: self.goal = GoalSpeed()
@@ -139,20 +140,25 @@ class MainClient(Client):
         if g.current_goal == 3: self.goal = GoalPoint()
 
     def on_bruteforce_evaluate(self, iface, info: BFEvaluationInfo) -> BFEvaluationResponse:
-        global current_best, improvements, velocity, rotation
         self.time = info.time
         self.phase = info.phase
 
         response = BFEvaluationResponse()
         response.decision = BFEvaluationDecision.DO_NOTHING
 
+        if g.time_min > self.time: # early return
+            return response
+
+        self.state = iface.get_simulation_state()
+
         # Initial phase (base run + after every ACCEPT improvement)
         # Check the all the ticks in eval_time and print the best one when run is in last tick of eval_time
         if self.phase == BFPhase.INITIAL:
-            if self.is_eval_time() and self.is_better(iface):
-                self.best, current_best = self.current, self.current
+            if self.is_eval_time() and self.is_better():
+                g.current_best = self.current
                 g.improvement_time = round(self.time/1000, 2)
-                velocity = [
+                g.position = [round(pos, 3) for pos in self.state.position]
+                g.velocity = [
                     round(
                     numpy.sum(
                         [
@@ -163,19 +169,20 @@ class MainClient(Client):
                     for idx in range(3)
                 ]
                 degs = lambda angle_rad: round(to_deg(angle_rad), 3)
-                rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
+                self.yaw_rad, self.pitch_rad, self.roll_rad = self.state.yaw_pitch_roll
+                g.rotation = [degs(self.yaw_rad), degs(self.pitch_rad), degs(self.roll_rad)]
 
             if self.is_max_time():
-                self.goal.print(self, g)
+                self.goal.print(g)
 
         # Search phase only impacts decision, logic is in initial phase
         elif self.phase == BFPhase.SEARCH:
-            if self.is_eval_time() and self.is_better(iface):
+            if self.is_eval_time() and self.is_better():
                 response.decision = BFEvaluationDecision.ACCEPT
-                improvements += 1
+                g.improvements += 1
                 self.iterations += 1
                 if g.save_inputs:
-                    self.save_result(filename=f"improvement_{improvements}.txt", event_buffer=iface.get_event_buffer())
+                    self.save_result(filename=f"improvement_{g.improvements}.txt", event_buffer=iface.get_event_buffer())
 
             elif self.is_past_eval_time():
                 response.decision = BFEvaluationDecision.REJECT
@@ -185,13 +192,9 @@ class MainClient(Client):
 
         return response
 
-    def is_better(self, iface):
-        self.state = iface.get_simulation_state()
-        self.yaw_rad, self.pitch_rad, self.roll_rad = self.state.yaw_pitch_roll
-        self.vel = numpy.linalg.norm(self.state.velocity)
-
+    def is_better(self):
         # Conditions
-        if g.min_speed_kmh > self.vel * 3.6: # Min speed
+        if g.min_speed_kmh > numpy.linalg.norm(self.state.velocity) * 3.6: # Min speed
             return False
 
         if g.min_cp > get_nb_cp(self.state): # Min CP
@@ -451,13 +454,14 @@ class GUI:
         imgui.text("Connection Status: " + (f"Connected to {g.server}" if g.is_registered else "Not Registered"))
         imgui.separator()
 
-        imgui.text(f"Bruteforce Best: {round(current_best, 3)} {unit}")
+        imgui.text(f"Bruteforce Best: {round(g.current_best, 3)} {unit}")
 
-        imgui.text(f"Improvements: {improvements}")
+        imgui.text(f"Improvements: {g.improvements}")
         imgui.text(f"Car information at {g.improvement_time}:")
         imgui.separator()
-        imgui.text(f"Velocity (x, y, z): {velocity}")
-        imgui.text(f"Rotation (yaw, pitch, roll): {rotation}")
+        imgui.text(f"Position (x, y, z): {g.position}")
+        imgui.text(f"Velocity (x, y, z): {g.velocity}")
+        imgui.text(f"Rotation (yaw, pitch, roll): {g.rotation}")
 
         imgui.end()
 
