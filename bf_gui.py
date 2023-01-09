@@ -1,5 +1,7 @@
 # Shoutout to Stuntlover, SaiMoen, and Shweetz
+# TODO: be not dumb at programming
 
+import numpy as np
 import colorsys
 import glfw
 import imgui
@@ -60,6 +62,9 @@ class Global:
 
         # Other
         self.settings_file_name = "settings.json"
+        self.improvements_list = [0.0]
+        self.plot_checkbox = False
+        self.plot_scale = 0
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -132,6 +137,7 @@ class MainClient(Client):
         g.current_best = -1
         g.improvement_time = -1
         g.improvements = 0
+        g.improvements_list = [0.0]
 
         g.unpackCoordinates()
         if g.current_goal == 0: self.goal = GoalSpeed()
@@ -169,6 +175,7 @@ class MainClient(Client):
             if self.is_eval_time() and self.is_better():
                 response.decision = BFEvaluationDecision.ACCEPT
                 g.improvements += 1
+                g.improvements_list.append(float(g.current_best)) # float because imgui doesn't like ints (racist)
                 self.iterations += 1
                 if g.save_inputs:
                     self.save_result(filename=f"improvement_{g.improvements}.txt", event_buffer=iface.get_event_buffer())
@@ -238,9 +245,7 @@ class GUI:
     def __init__(self):
         self.fontPath = "" # font
         self.color = [0.25, 0.5, 0.75, 0.5] # background color
-        self.bgcolor = [0.25, 0.5, 0.75, 0.5] # wtf does this do this isnt background color
-        # self.titlecolor = [0, 0, 0, 1] not coming because im dumb at programming
-        # TODO: be not dumb at programming
+        self.bgcolor = [0.25, 0.5, 0.75, 0.5] # this is from glfw (don't ask ok)
         self.colorChange = 0 # you can change this if you want
         self.rgbScroll = False # rgb background flag
         self.enableExtraYaw = False
@@ -336,6 +341,9 @@ class GUI:
         # Create a windowed mode window and its OpenGL context
         window = glfw.create_window(int(width), int(height), window_name, None, None)
         glfw.make_context_current(window)
+
+        # glfw.set_window_opacity(window, 0.5)
+        # glfw.set_window_attrib(window, glfw.DECORATED, False)
 
         if not window:
             glfw.terminate()
@@ -450,12 +458,36 @@ class GUI:
 
         imgui.text(f"Improvements: {g.improvements}")
         imgui.text(f"Car information at {g.improvement_time}:")
+
         imgui.separator()
+
         imgui.text(f"Position (x, y, z): {g.position}")
         imgui.text(f"Velocity (x, y, z): {g.velocity}")
         imgui.text(f"Rotation (yaw, pitch, roll): {g.rotation}")
 
+        imgui.separator()
+        
+        g.plot_checkbox = imgui.checkbox("Enable plotting improvements", g.plot_checkbox)[1]
+
         imgui.end()
+
+    def bf_plot(self):
+        if not g.plot_checkbox:
+            pass
+        else:
+            imgui.begin("Plot", True)
+            # The "##" is to make the name disappear, it is used to clarify what this plot is for in code.    
+            improvement = g.improvements_list[len(g.improvements_list)-1]
+            g.plot_scale = improvement if improvement > g.plot_scale else g.plot_scale
+            imgui.plot_lines(
+                "##Improvement Plot", 
+                np.array(g.improvements_list, np.float32), 
+                graph_size=(700, 400),
+                scale_max=g.plot_scale
+            )
+            
+            imgui.end()
+
 
     def customize(self):
         imgui.begin("Customize", True)
@@ -485,13 +517,14 @@ class GUI:
 
             self.bf_result()
             self.bf_settings()
+            self.bf_plot()
             self.customize()
 
             imgui.render()
 
             if self.rgbScroll:
                 self.color = r2h(*self.color) # convert to hsv
-                self.color[0] = (self.color[0] + self.colorChange/1000000) % 1 # add hue
+                self.color[0] = (self.color[0] + self.colorChange/1000000) % 1 # add hue (division is because of very high FPS)
                 self.color = h2r(*self.color) # convert back into rgb
 
             self.backgroundColor = self.color.copy() # set the self.color
