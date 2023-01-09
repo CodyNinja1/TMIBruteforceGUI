@@ -63,8 +63,8 @@ class Global:
         # Other
         self.settings_file_name = "settings.json"
         self.improvements_list = [0.0]
-        self.plot_checkbox = False
-        self.plot_scale = 0
+        self.improvement_graph = False
+        self.improvement_graph_scale = 0
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -298,7 +298,8 @@ class GUI:
             "min_speed_kmh": g.min_speed_kmh,
             "min_cp": g.min_cp,
             "must_touch_ground": g.must_touch_ground,
-            "settings_file_name": g.settings_file_name
+            "settings_file_name": g.settings_file_name,
+            "improvement_graph": g.improvement_graph
         }
 
         with open(g.settings_file_name, "w") as s:
@@ -326,6 +327,7 @@ class GUI:
             g.min_cp = settings["min_cp"]
             g.must_touch_ground = settings["must_touch_ground"]
             g.settings_file_name = settings["settings_file_name"]
+            g.improvement_graph = settings["improvement_graph"]
 
     def impl_glfw_init(self, window_name="TrackMania Bruteforce GUI", width=300, height=300):
         if not glfw.init():
@@ -467,23 +469,23 @@ class GUI:
 
         imgui.separator()
         
-        g.plot_checkbox = imgui.checkbox("Enable plotting improvements", g.plot_checkbox)[1]
+        g.improvement_graph = imgui.checkbox("Enable plotting improvements", g.improvement_graph)[1]
 
         imgui.end()
 
     def bf_plot(self):
-        if not g.plot_checkbox:
+        if not g.improvement_graph:
             pass
         else:
-            imgui.begin("Plot", True)
+            imgui.begin("Improvement Graph", True)
             # The "##" is to make the name disappear, it is used to clarify what this plot is for in code.    
             improvement = g.improvements_list[len(g.improvements_list)-1]
-            g.plot_scale = improvement if improvement > g.plot_scale else g.plot_scale
+            g.improvement_graph_scale   = improvement if improvement > g.improvement_graph_scale else g.improvement_graph_scale 
             imgui.plot_lines(
-                "##Improvement Plot", 
+                "##Improvement Graph", 
                 np.array(g.improvements_list, np.float32), 
                 graph_size=(700, 400),
-                scale_max=g.plot_scale
+                scale_max=g.improvement_graph_scale 
             )
             
             imgui.end()
