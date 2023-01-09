@@ -480,7 +480,7 @@ class GUI:
             imgui.begin("Improvement Graph", True)
             # The "##" is to make the name disappear, it is used to clarify what this plot is for in code.    
             improvement = g.improvements_list[len(g.improvements_list)-1]
-            g.improvement_graph_scale   = improvement if improvement > g.improvement_graph_scale else g.improvement_graph_scale 
+            g.improvement_graph_scale = improvement if improvement > g.improvement_graph_scale else g.improvement_graph_scale 
             imgui.plot_lines(
                 "##Improvement Graph", 
                 np.array(g.improvements_list, np.float32), 
