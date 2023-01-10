@@ -8,9 +8,9 @@ This script provides an easy way to use bruteforce scripts in TMInterface using 
 # How to use
 ⚠️ The Wiki is slowly moving to https://github.com/CodyNinja1/TMIBruteforceGUI/wiki ⚠️
 
-First, install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K), or from the [official Python website](https://www.python.org/downloads/release/python-3111/).
+First, install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K) or from the [official Python website](https://www.python.org/downloads/release/python-3111/).
 
-After Python is done installing or you already have Python, press the big green `Code` button at the top this page, then click the `Download ZIP` option. 
+After Python is done installing or you already have Python, press the big green `Code` button at the top of this page, then click the `Download ZIP` option. 
 
 Once the ZIP is downloaded, extract it into a folder.
 
@@ -27,7 +27,7 @@ Now you should have a GUI on your screen! Select your bruteforce goal of choice,
 Huge thanks to Shweetz, Sai-Moen, and Stuntlover for actively working on this project!
 
 
-We are actively trying to improve the tool in any way we can, whether it's adding new scripts, fixing bugs etc
+We are actively trying to improve the tool in any way we can, whether it's adding new scripts, fixing bugs, etc.
 
 If you have any suggestions feel free to make a pull request or open an issue
 
