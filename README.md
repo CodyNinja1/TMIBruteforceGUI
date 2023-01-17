@@ -10,7 +10,7 @@ This script provides an easy way to use bruteforce scripts in TMInterface using 
 
 First, install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K) or from the [official Python website](https://www.python.org/downloads/release/python-3111/).
 
-After Python is done installing or you already have Python, go to [releases](https://github.com/CodyNinja1/TMIBruteforceGUI/releases) and download the latest release's ZIP file
+After Python is done installing or you already have Python, go to [the latest releases](https://github.com/CodyNinja1/TMIBruteforceGUI/releases/latest) and download the the ZIP file
 
 Once the ZIP is downloaded, extract it into a folder.
 
