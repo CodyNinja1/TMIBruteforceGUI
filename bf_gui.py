@@ -86,7 +86,7 @@ def update():
 
     files = requests.get(version_file_url).text.split("\n")
 
-    current_version = "v0.1.1"
+    current_version = "v0.1.2"
     version = files[5]
 
     update_bool = None
