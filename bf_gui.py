@@ -81,7 +81,7 @@ class Global:
         return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
 
 def update():
-    """Prompts user if they are on an out of date version"""
+    """Prompts user to update if they are on an out of date version, automatically replaces old files"""
     version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt'
 
     files = requests.get(version_file_url).text.split("\n")
