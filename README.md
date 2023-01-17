@@ -16,7 +16,7 @@ Once the ZIP is downloaded, extract it into a folder.
 
 Make sure to install the Visual C++ Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
-After you've done that, open your Command Prompt/Terminal in the extracted folder and type run `py -m pip install -r requirements.txt`
+After you've done that, open your Command Prompt/Terminal in the extracted folder and type run `python -m pip install -r requirements.txt`
 
 After those are done installing you can open TMInterface.
 
