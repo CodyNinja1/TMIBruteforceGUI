@@ -85,7 +85,7 @@ def update():
 
     files = requests.get(version_file_url).text.split("\n")
 
-    current_version = "v0.0.1-alph2a"
+    current_version = "v0.0.1-alpha"
 
     version = files[5]
 
