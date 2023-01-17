@@ -85,14 +85,15 @@ def update():
 
     files = requests.get(version_file_url).text.split("\n")
 
-    current_version = "v0.0.1-alpha"
+    current_version = "v0.0.1-alph2a"
 
     version = files[5]
 
     update_bool = None
 
     if version != current_version:
-        update_bool = ctypes.windll.user32.MessageBoxW(0, f"New update available ({version})! Would you like to install the newest version? (Warning: This will replace any code you have changed)", "New update available!", 1)
+        ICON_INFO = 0x40
+        update_bool = ctypes.windll.user32.MessageBoxW(0, f"New update available ({version})! Would you like to install the newest version?\n(Warning: This will replace any code you have changed)", "New update available!", ICON_INFO | 1)
     
     if update_bool == 1:
         download = lambda file_name, file_url : open(file_name, 'wb').write(file_url.content)
