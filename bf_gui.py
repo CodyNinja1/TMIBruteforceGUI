@@ -81,6 +81,7 @@ class Global:
         return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
 
 def update():
+    """Prompts user if they are on an out of date version"""
     version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt'
 
     files = requests.get(version_file_url).text.split("\n")
@@ -311,6 +312,7 @@ class GUI:
         self.loop()
 
     def save_settings(self):
+        """Save bruteforce settings"""
         settings = {
             "current_goal": g.current_goal,
             "extra_yaw": g.extra_yaw,
@@ -337,6 +339,7 @@ class GUI:
             json.dump(settings, s)
 
     def load_settings(self):
+        """Load bruteforce settings"""
         with open(g.settings_file_name, "r") as set:
             settings = json.load(set)
 
@@ -504,7 +507,7 @@ class GUI:
 
         imgui.end()
 
-    def bf_plot(self):
+    def bf_improvement_graph(self):
         if not g.improvement_graph:
             pass
         else:
@@ -550,7 +553,7 @@ class GUI:
 
             self.bf_result()
             self.bf_settings()
-            self.bf_plot()
+            self.bf_improvement_graph()
             self.customize()
 
             imgui.render()
@@ -588,10 +591,7 @@ def main():
     while not iface.registered:
         time.sleep(0)
 
-    last_time = 0
     while iface.registered:
-        if client.time != last_time:
-            last_time = client.time
         time.sleep(0)
 
 if __name__ == '__main__':
