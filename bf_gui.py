@@ -5,9 +5,12 @@ import numpy as np
 import colorsys
 import glfw
 import imgui
-import math
+import requests
+import ctypes
 import numpy
 import OpenGL.GL as gl
+
+import math
 import os
 import signal
 import struct
@@ -25,7 +28,7 @@ from tminterface.client import Client
 from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
 
 class Global:
-    # Add your variables you want to use globally in here
+    """Add your variables you want to use globally in here"""
 
     def __init__(self):
         self.is_registered = False
@@ -77,6 +80,34 @@ class Global:
         car_x, car_y, car_z = state.position
         return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
 
+def update():
+    version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt'
+
+    files = requests.get(version_file_url).text.split("\n")
+
+    current_version = "v0.0.1-alpha"
+
+    version = files[5]
+
+    update_bool = None
+
+    if version != current_version:
+        update_bool = ctypes.windll.user32.MessageBoxW(0, f"New update available ({version})! Would you like to install the newest version? (Warning: This will replace any code you have changed)", "New update available!", 1)
+    
+    if update_bool == 1:
+        download = lambda file_name, file_url : open(file_name, 'wb').write(file_url.content)
+
+        download(".gitignore", requests.get(files[0]))
+        download("README.md", requests.get(files[1]))
+        download("bf_gui.py", requests.get(files[2]))
+        download("bf_specific.py", requests.get(files[3]))
+        download("requirements.txt", requests.get(files[4]))
+
+        MB_OK = 0x0
+        ctypes.windll.user32.MessageBoxW(0, "Done updating, please reopen the program", "Done Updating", MB_OK)
+        exit()
+
+update()
 
 g = Global()
 
@@ -469,7 +500,7 @@ class GUI:
 
         imgui.separator()
         
-        g.improvement_graph = imgui.checkbox("Enable plotting improvements", g.improvement_graph)[1]
+        g.improvement_graph = imgui.checkbox("Enable improvement graph", g.improvement_graph)[1]
 
         imgui.end()
 
