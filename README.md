@@ -43,5 +43,8 @@ If you have any suggestions feel free to make a pull request or open an issue
 ### Custom Scripts coming soon
 - Precise Finish
 
+### Currently not possible
+- Stuntpoint Bruteforce
+
 ---
 
