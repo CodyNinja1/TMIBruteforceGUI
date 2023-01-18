@@ -176,7 +176,12 @@ if update() == 0:
 else:
     pass
 
-g.load_settings("autosave.json")
+try:
+    g.load_settings("autosave.json")
+except:
+    if not os.path.exists("autosave.json"):
+        with open("autosave.json", "x") as autosave:
+            g.save_settings("autosave.json")
 
 def makeGUI():
     GUI()
