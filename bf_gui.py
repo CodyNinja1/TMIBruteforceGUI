@@ -114,7 +114,7 @@ class Global:
         }
 
         with open(filename, "w") as s:
-            json.dump(settings, s)
+            json.dump(settings, s, sort_keys=True, indent=4)
 
     def load_settings(self):
         """Load bruteforce settings"""
