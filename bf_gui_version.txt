@@ -3,4 +3,4 @@ https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/README.md
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui.py
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_specific.py
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/requirements.txt
-v0.1.3.3
+v0.1.3.4
