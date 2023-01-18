@@ -592,6 +592,7 @@ class GUI:
         glfw.terminate()
 
         g.save_settings("autosave.json")
+        exit()
 
 def main():
     server_name = f'TMInterface{sys.argv[1]}' if len(sys.argv) > 1 else 'TMInterface0'
