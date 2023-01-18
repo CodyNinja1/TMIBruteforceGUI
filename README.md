@@ -12,15 +12,17 @@ First, install Python, either from the [Microsoft Store](https://apps.microsoft.
 
 After Python is done installing or you already have Python, go to [the latest release](https://github.com/CodyNinja1/TMIBruteforceGUI/releases/latest) and download the the ZIP file
 
-Once the ZIP is downloaded, extract it into a folder.
+Once the ZIP is downloaded, extract it.
 
 Make sure to install the Visual C++ Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
-After you've done that, open your Command Prompt/Terminal in the extracted folder and type run `python -m pip install -r requirements.txt`
+After you've done those, open your Command Prompt/Terminal in the extracted folder and type run `python -m pip install -r requirements.txt`
 
 After those are done installing you can open TMInterface.
 
 In that same Command Prompt/Terminal Process, type `python bf_gui.py` and hit enter. 
+
+If there's a warning saying there's a new update, it's recommended to press Yes, it will automatically update all needed files, then re-open bf_gui.py.
 
 Now you should have a GUI on your screen! Select your bruteforce goal of choice, change the settings and validate a replay. Happy bruteforcing! :partying_face:
 
