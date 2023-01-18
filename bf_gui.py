@@ -70,9 +70,6 @@ class Global:
         self.improvement_graph_scale = 0
 
         # Updates
-        self.check_updates_startup = True
-        self.auto_check_updates = True
-
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.files = requests.get(self.version_file_url).text.split("\n")
         self.current_version = "v0.1.3.4"
