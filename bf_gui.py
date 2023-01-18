@@ -73,7 +73,7 @@ class Global:
         # Updates
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.files = requests.get(self.version_file_url).text.split("\n")
-        self.current_version = "v0.1.3.6-patch1"
+        self.current_version = "v0.1.3.6-patch2"
         self.version = self.files[5]
 
     def unpackCoordinates(self):
