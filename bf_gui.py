@@ -9,6 +9,7 @@ import requests
 import ctypes
 import numpy
 import OpenGL.GL as gl
+import win32api
 
 import math
 import os
@@ -601,6 +602,11 @@ def main():
     def handler(signum, frame):
         iface.close()
         quit()
+
+    def on_exit(signal_type):
+        g.save_settings("autosave.json")
+    
+    win32api.SetConsoleCtrlHandler(on_exit, True)
 
     signal.signal(signal.SIGBREAK, handler)
     signal.signal(signal.SIGINT, handler)
