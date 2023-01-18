@@ -70,9 +70,12 @@ class Global:
         self.improvement_graph_scale = 0
 
         # Updates
+        self.check_updates_startup = True
+        self.auto_check_updates = True
+
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.files = requests.get(self.version_file_url).text.split("\n")
-        self.current_version = "v0.1.3.4"
+        self.current_version = "v0.1.3.5"
         self.version = self.files[5]
 
     def unpackCoordinates(self):
@@ -113,9 +116,9 @@ class Global:
         with open(filename, "w") as s:
             json.dump(settings, s, sort_keys=True, indent=4)
 
-    def load_settings(self):
-        """Load bruteforce settings"""
-        with open(g.settings_file_name, "r") as set:
+    def load_settings(self, filename):
+        """Load bruteforce settings, takes filename as an argument"""
+        with open(filename, "r") as set:
             settings = json.load(set)
 
             g.current_goal = settings["current_goal"]
@@ -174,6 +177,8 @@ if update() == 0:
     exit()
 else:
     pass
+
+g.load_settings("autosave.json")
 
 def makeGUI():
     GUI()
@@ -443,7 +448,7 @@ class GUI:
     def load_settings_gui(self):
         load = imgui.button("Load Settings")
         if load:
-            g.load_settings()
+            g.load_settings(g.settings_file_name)
 
     def settings_file_name_gui(self):
         g.settings_file_name = imgui.input_text("Settings File Name", g.settings_file_name, 256)[1] 
