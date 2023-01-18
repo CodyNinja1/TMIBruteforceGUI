@@ -70,9 +70,12 @@ class Global:
         self.improvement_graph_scale = 0
 
         # Updates
+        self.check_updates_startup = True
+        self.auto_check_updates = True
+
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.files = requests.get(self.version_file_url).text.split("\n")
-        self.current_version = "v0.1.3.2"
+        self.current_version = "v0.1.3.3"
         self.version = self.files[5]
 
     def unpackCoordinates(self):
@@ -86,8 +89,8 @@ class Global:
         car_x, car_y, car_z = state.position
         return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
 
-    def save_settings(self):
-        """Save bruteforce settings"""
+    def save_settings(self, filename):
+        """Save bruteforce settings, takes filename as an argument"""
         settings = {
             "current_goal": g.current_goal,
             "extra_yaw": g.extra_yaw,
@@ -107,13 +110,10 @@ class Global:
             "min_cp": g.min_cp,
             "must_touch_ground": g.must_touch_ground,
             "settings_file_name": g.settings_file_name,
-            "improvement_graph": g.improvement_graph,
-
-            "check_updates_startup": g.check_updates_startup,
-            "auto_check_updates": g.auto_check_updates
+            "improvement_graph": g.improvement_graph
         }
 
-        with open(g.settings_file_name, "w") as s:
+        with open(filename, "w") as s:
             json.dump(settings, s)
 
     def load_settings(self):
@@ -140,9 +140,6 @@ class Global:
             g.must_touch_ground = settings["must_touch_ground"]
             g.settings_file_name = settings["settings_file_name"]
             g.improvement_graph = settings["improvement_graph"]
-
-            g.check_updates_startup = settings["check_updates_startup"]
-            g.auto_check_updates = settings["auto_check_updates"]
 
 g = Global()
 
@@ -444,7 +441,7 @@ class GUI:
     def save_settings_gui(self):
         save = imgui.button("Save Settings")
         if save:
-            g.save_settings()
+            g.save_settings(g.settings_file_name)
 
     def load_settings_gui(self):
         load = imgui.button("Load Settings")
@@ -590,6 +587,8 @@ class GUI:
 
         self.impl.shutdown()
         glfw.terminate()
+
+        g.save_settings("autosave.json")
 
 def main():
     server_name = f'TMInterface{sys.argv[1]}' if len(sys.argv) > 1 else 'TMInterface0'
