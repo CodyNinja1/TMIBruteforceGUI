@@ -1,5 +1,4 @@
 # Shoutout to Stuntlover, SaiMoen, and Shweetz
-# TODO: be not dumb at programming
 
 import numpy as np
 import colorsys
@@ -69,6 +68,10 @@ class Global:
         self.improvement_graph = False
         self.improvement_graph_scale = 0
 
+        # Updates
+        self.check_updates_startup = True
+        self.auto_check_updates = True
+
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
         (self.minX, self.maxX), (self.minY, self.maxY), (self.minZ, self.maxZ) = [
@@ -80,22 +83,87 @@ class Global:
         car_x, car_y, car_z = state.position
         return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
 
+    def save_settings(self):
+        """Save bruteforce settings"""
+        settings = {
+            "current_goal": g.current_goal,
+            "extra_yaw": g.extra_yaw,
+            "point": g.point,
+
+            "enablePositionCheck": g.enablePositionCheck,
+            "pair1": g.pair1,
+            "pair2": g.pair2,
+
+            "save_inputs": g.save_inputs,
+            "save_folder": g.save_folder,
+            "save_only_results": g.save_only_results,
+
+            "time_min": g.time_min,
+            "time_max": g.time_max,
+            "min_speed_kmh": g.min_speed_kmh,
+            "min_cp": g.min_cp,
+            "must_touch_ground": g.must_touch_ground,
+            "settings_file_name": g.settings_file_name,
+            "improvement_graph": g.improvement_graph,
+
+            "check_updates_startup": g.check_updates_startup,
+            "auto_check_updates": g.auto_check_updates
+        }
+
+        with open(g.settings_file_name, "w") as s:
+            json.dump(settings, s)
+
+    def load_settings(self):
+        """Load bruteforce settings"""
+        with open(g.settings_file_name, "r") as set:
+            settings = json.load(set)
+
+            g.current_goal = settings["current_goal"]
+            g.extra_yaw = settings["extra_yaw"]
+            g.point = settings["point"]
+
+            g.enablePositionCheck = settings["enablePositionCheck"]
+            g.pair1 = settings["pair1"]
+            g.pair2 = settings["pair2"]
+
+            g.save_inputs = settings["save_inputs"]
+            g.save_folder = settings["save_folder"]
+            g.save_only_results = settings["save_only_results"]
+
+            g.time_min = settings["time_min"]
+            g.time_max = settings["time_max"]
+            g.min_speed_kmh = settings["min_speed_kmh"]
+            g.min_cp = settings["min_cp"]
+            g.must_touch_ground = settings["must_touch_ground"]
+            g.settings_file_name = settings["settings_file_name"]
+            g.improvement_graph = settings["improvement_graph"]
+
+            g.check_updates_startup = settings["check_updates_startup"]
+            g.auto_check_updates = settings["auto_check_updates"]
+
 def update():
-    """Prompts user to update if they are on an out of date version, automatically replaces old files"""
+    """
+    Prompts user to update if they are on an out of date version, automatically replaces old files
+    Returns 0 if it was updated, 1 if not
+    """
     version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt'
 
     files = requests.get(version_file_url).text.split("\n")
 
-    current_version = "v0.1.2"
+    current_version = "v0.1.3"
     version = files[5]
 
     update_bool = None
 
+    ICON_INFO = 0x40
+    ICON_WARNING = 0x30
+    MB_OK = 0x0
+    MB_YESNO = 0x4
+
     if version != current_version:
-        ICON_INFO = 0x40
-        update_bool = ctypes.windll.user32.MessageBoxW(0, f"New update available ({version})! Would you like to install the newest version?\n(Warning: This will replace any code you have changed)", "New update available!", ICON_INFO | 1)
-    
-    if update_bool == 1:
+        update_bool = ctypes.windll.user32.MessageBoxW(0, f"New update available! Would you like to install the newest version?\n(Warning: This will replace any code you have changed)", f"{version} Version Available!", ICON_WARNING | MB_YESNO)
+
+    if update_bool == 6:
         download = lambda file_name, file_url : open(file_name, 'wb').write(file_url.content)
 
         download(".gitignore", requests.get(files[0]))
@@ -104,11 +172,16 @@ def update():
         download("bf_specific.py", requests.get(files[3]))
         download("requirements.txt", requests.get(files[4]))
 
-        MB_OK = 0x0
-        ctypes.windll.user32.MessageBoxW(0, "Done updating, please reopen the program", "Done Updating", MB_OK)
-        exit()
+        ctypes.windll.user32.MessageBoxW(0, "Done updating, all necessary files have been replaced\nPlease reopen the program", "Update Complete", MB_OK | ICON_INFO)
+        
+        return 0
 
-update()
+    return 1
+
+if update() == 0:
+    exit()
+else:
+    pass
 
 g = Global()
 
@@ -311,58 +384,6 @@ class GUI:
 
         self.loop()
 
-    def save_settings(self):
-        """Save bruteforce settings"""
-        settings = {
-            "current_goal": g.current_goal,
-            "extra_yaw": g.extra_yaw,
-            "point": g.point,
-
-            "enablePositionCheck": g.enablePositionCheck,
-            "pair1": g.pair1,
-            "pair2": g.pair2,
-
-            "save_inputs": g.save_inputs,
-            "save_folder": g.save_folder,
-            "save_only_results": g.save_only_results,
-
-            "time_min": g.time_min,
-            "time_max": g.time_max,
-            "min_speed_kmh": g.min_speed_kmh,
-            "min_cp": g.min_cp,
-            "must_touch_ground": g.must_touch_ground,
-            "settings_file_name": g.settings_file_name,
-            "improvement_graph": g.improvement_graph
-        }
-
-        with open(g.settings_file_name, "w") as s:
-            json.dump(settings, s)
-
-    def load_settings(self):
-        """Load bruteforce settings"""
-        with open(g.settings_file_name, "r") as set:
-            settings = json.load(set)
-
-            g.current_goal = settings["current_goal"]
-            g.extra_yaw = settings["extra_yaw"]
-            g.point = settings["point"]
-
-            g.enablePositionCheck = settings["enablePositionCheck"]
-            g.pair1 = settings["pair1"]
-            g.pair2 = settings["pair2"]
-
-            g.save_inputs = settings["save_inputs"]
-            g.save_folder = settings["save_folder"]
-            g.save_only_results = settings["save_only_results"]
-
-            g.time_min = settings["time_min"]
-            g.time_max = settings["time_max"]
-            g.min_speed_kmh = settings["min_speed_kmh"]
-            g.min_cp = settings["min_cp"]
-            g.must_touch_ground = settings["must_touch_ground"]
-            g.settings_file_name = settings["settings_file_name"]
-            g.improvement_graph = settings["improvement_graph"]
-
     def impl_glfw_init(self, window_name="TrackMania Bruteforce GUI", width=300, height=300):
         if not glfw.init():
             print("Could not initialize OpenGL context")
@@ -427,15 +448,15 @@ class GUI:
     def save_settings_gui(self):
         save = imgui.button("Save Settings")
         if save:
-            self.save_settings()
+            g.save_settings()
 
     def load_settings_gui(self):
         load = imgui.button("Load Settings")
         if load:
-            self.load_settings()
+            g.load_settings()
 
     def settings_file_name_gui(self):
-        g.settings_file_name = imgui.input_text("Settings File Name", g.settings_file_name, 256)[1]
+        g.settings_file_name = imgui.input_text("Settings File Name", g.settings_file_name, 256)[1] 
 
     def bf_settings(self):
         imgui.begin("Evaluation Settings", True)
