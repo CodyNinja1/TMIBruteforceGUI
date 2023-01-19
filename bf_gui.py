@@ -1,16 +1,8 @@
 # Shoutout to Stuntlover, SaiMoen, and Shweetz
 # TODO: be not dumb at programming
 
-import numpy as np
 import colorsys
-import glfw
-import imgui
-import requests
 import ctypes
-import numpy
-import OpenGL.GL as gl
-import win32api
-
 import math
 import os
 import signal
@@ -20,11 +12,24 @@ import threading
 import time
 import json
 
-from imgui.integrations.glfw import GlfwRenderer
+try:
+    import numpy as np
+    import glfw
+    import imgui
+    import requests
+    import numpy
+    import OpenGL.GL as gl
+    import win32api
 
-from tminterface.structs import BFEvaluationDecision, BFEvaluationInfo, BFEvaluationResponse, BFPhase
-from tminterface.interface import TMInterface
-from tminterface.client import Client
+    from imgui.integrations.glfw import GlfwRenderer
+
+    from tminterface.structs import BFEvaluationDecision, BFEvaluationInfo, BFEvaluationResponse, BFPhase
+    from tminterface.interface import TMInterface
+    from tminterface.client import Client
+except ImportError:
+    print("Failed to import modules, trying to install...")
+    os.system("python -m pip install -r requirements.txt")
+    print("Installed requirements")
 
 from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
 
@@ -72,9 +77,9 @@ class Global:
 
         # Updates
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
-        self.files = requests.get(self.version_file_url).text.split("\n")
-        self.current_version = "v0.1.3.6-patch2"
-        self.version = self.files[5]
+        self.version_file_lines = requests.get(self.version_file_url).text.split("\n")
+        self.version = (self.version_file_lines[0][:30] + "...") if len(self.version_file_lines[0]) > 30 else self.version_file_lines[0]
+        self.current_version = "v0.1.3.7"
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -144,37 +149,48 @@ g = Global()
 def update():
     """
     Prompts user to update if they are on an out of date version, automatically replaces old files
-    Returns 0 if it was updated, 1 if not
+    Returns 0 if it was updated, 1 if not, 2 if there was a new update but the user declined it
     """
-    update_bool = None
+    accepted_update = None 
 
     ICON_INFO = 0x40
     ICON_WARNING = 0x30
     MB_OK = 0x0
     MB_YESNO = 0x4
 
+    print("Checking for updates...")
     if g.version != g.current_version:
-        update_bool = ctypes.windll.user32.MessageBoxW(0, f"New update available! Would you like to install the newest version?\n(Warning: This will replace any code you have changed)", f"{g.version} Version Available!", ICON_WARNING | MB_YESNO)
+        print(f"Found new update, new version: {g.version}, current version: {g.current_version}")
+        accepted_update = ctypes.windll.user32.MessageBoxW(0, f"New update available! Would you like to install the newest version?\n(Warning: This will replace any code you have changed)", f"{g.version} Version Available!", ICON_WARNING | MB_YESNO)
+    
 
-    if update_bool == 6:
+    if accepted_update == 6:
         download = lambda file_name, file_url : open(file_name, 'wb').write(file_url.content)
 
-        download(".gitignore", requests.get(g.files[0]))
-        download("README.md", requests.get(g.files[1]))
         download("bf_gui.py", requests.get(g.files[2]))
         download("bf_specific.py", requests.get(g.files[3]))
         download("requirements.txt", requests.get(g.files[4]))
 
         ctypes.windll.user32.MessageBoxW(0, "Done updating, all necessary files have been replaced\nPlease reopen the program", "Update Complete", MB_OK | ICON_INFO)
-        
+
         return 0
 
-    return 1
+    elif accepted_update == 7: return 2
 
-if update() == 0:
+    else: return 1
+
+updated = update()
+
+if updated == 0:
+    print("Updated, exiting program")
     exit()
-else:
-    pass
+
+elif updated == 1:
+    print("No updates found, running TMIBruteforceGUI")
+
+elif updated == 2:
+    print("Declined update")
+
 
 try:
     g.load_settings("autosave.json")
