@@ -99,10 +99,7 @@ class Global:
         minYaw = g.yawpair1
         maxYaw = g.yawpair2
         yaw = g.rotation[0]
-        if yaw >= minYaw and yaw <= maxYaw:
-            return True
-        else:
-            return False
+        return yaw >= minYaw and yaw <= maxYaw
 
 
     def save_settings(self, filename):
