@@ -12,6 +12,8 @@ import threading
 import time
 import json
 
+from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
+
 try:
     import numpy as np
     import glfw
@@ -30,8 +32,6 @@ except ImportError:
     print("Failed to import modules, trying to install...")
     os.system("python -m pip install -r requirements.txt")
     print("Installed requirements")
-
-from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
 
 class Global:
     """Add your variables you want to use globally in here"""
