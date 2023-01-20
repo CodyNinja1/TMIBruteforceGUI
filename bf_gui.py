@@ -12,8 +12,6 @@ import threading
 import time
 import json
 
-from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
-
 try:
     import numpy as np
     import glfw
@@ -33,6 +31,8 @@ except ImportError:
     os.system("python -m pip install -r requirements.txt")
     print("Installed requirements")
 
+from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
+
 class Global:
     """Add your variables you want to use globally in here"""
 
@@ -50,8 +50,11 @@ class Global:
 
         # Conditions
         self.enablePositionCheck = False
+        self.enableYawCheck = False
         self.pair1 = [0, 0, 0]
         self.pair2 = [999, 999, 999]
+        self.yawpair1 = 0.000
+        self.yawpair2 = 999.000
         self.min_speed_kmh = 0
         self.min_cp = 0
         self.must_touch_ground = False
@@ -91,6 +94,16 @@ class Global:
         """Execute every tick where is_eval_time() is True"""
         car_x, car_y, car_z = state.position
         return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
+    
+    def isCarInMinMaxYaw(self, state):
+        minYaw = g.yawpair1
+        maxYaw = g.yawpair2
+        yaw = g.rotation[0]
+        if yaw >= minYaw and yaw <= maxYaw:
+            return True
+        else:
+            return False
+
 
     def save_settings(self, filename):
         """Save bruteforce settings, takes filename as an argument"""
@@ -102,6 +115,8 @@ class Global:
             "enablePositionCheck": g.enablePositionCheck,
             "pair1": g.pair1,
             "pair2": g.pair2,
+            "yawpair1": g.yawpair1,
+            "yawpair2": g.yawpair2,
 
             "save_inputs": g.save_inputs,
             "save_folder": g.save_folder,
@@ -131,6 +146,8 @@ class Global:
             g.enablePositionCheck = settings["enablePositionCheck"]
             g.pair1 = settings["pair1"]
             g.pair2 = settings["pair2"]
+            g.yawpair1 = settings["yawpair1"]
+            g.yawpair2 = settings["yawpair2"]
 
             g.save_inputs = settings["save_inputs"]
             g.save_folder = settings["save_folder"]
@@ -308,6 +325,7 @@ class MainClient(Client):
         return response
 
     def is_better(self):
+
         # Conditions
         if g.min_speed_kmh > numpy.linalg.norm(self.state.velocity) * 3.6: # Min speed
             return False
@@ -319,6 +337,9 @@ class MainClient(Client):
             return False
 
         if g.enablePositionCheck and not g.isCarInTrigger(self.state): # Position
+            return False
+        
+        if g.enableYawCheck and not g.isCarInMinMaxYaw(self.state): # Yaw
             return False
 
         # Specific goal bruteforce
@@ -452,6 +473,14 @@ class GUI:
         if g.enablePositionCheck:
             input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
             g.pair1, g.pair2 = input_pair('Trigger Corner 1', g.pair1), input_pair('Trigger Corner 2', g.pair2)
+        
+        # Yaw Check
+        g.enableYawCheck = imgui.checkbox("Enable Yaw Check (Car must be between 2 Yaw values)", g.enableYawCheck)[1]
+        
+        if g.enableYawCheck:
+            g.yawpair1 = imgui.input_float('Minimum Yaw', g.yawpair1)[1]
+            g.yawpair2 = imgui.input_float('Maximum Yaw', g.yawpair2)[1]
+            print(g.yawpair1, g.yawpair2)
 
     def bf_other_gui(self):
         g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
