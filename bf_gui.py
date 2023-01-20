@@ -1,5 +1,4 @@
 # Shoutout to Stuntlover, SaiMoen, and Shweetz
-# TODO: be not dumb at programming
 
 import colorsys
 import ctypes
