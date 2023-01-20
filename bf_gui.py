@@ -51,10 +51,10 @@ class Global:
         # Conditions
         self.enablePositionCheck = False
         self.enableYawCheck = False
-        self.pair1 = [0, 0, 0]
-        self.pair2 = [999, 999, 999]
-        self.yawpair1 = 0.000
-        self.yawpair2 = 999.000
+        self.triggerCorner1 = [0, 0, 0]
+        self.triggerCorner2 = [999, 999, 999]
+        self.minYaw = 0.000
+        self.maxYaw = 999.000
         self.min_speed_kmh = 0
         self.min_cp = 0
         self.must_touch_ground = False
@@ -87,7 +87,7 @@ class Global:
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
         (self.minX, self.maxX), (self.minY, self.maxY), (self.minZ, self.maxZ) = [
-            sorted((round(self.pair1[i], 2), round(self.pair2[i], 2))) for i in range(3)
+            sorted((round(self.triggerCorner1[i], 2), round(self.triggerCorner2[i], 2))) for i in range(3)
         ]
 
     def isCarInTrigger(self, state):
@@ -96,10 +96,8 @@ class Global:
         return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
     
     def isCarInMinMaxYaw(self, state):
-        minYaw = g.yawpair1
-        maxYaw = g.yawpair2
         yaw = g.rotation[0]
-        return minYaw <= yaw <=
+        return g.minYaw <= yaw <= g.maxYaw
 
 
     def save_settings(self, filename):
@@ -110,10 +108,10 @@ class Global:
             "point": g.point,
 
             "enablePositionCheck": g.enablePositionCheck,
-            "pair1": g.pair1,
-            "pair2": g.pair2,
-            "yawpair1": g.yawpair1,
-            "yawpair2": g.yawpair2,
+            "triggerCorner1": g.triggerCorner1,
+            "triggerCorner2": g.triggerCorner2,
+            "minYaw": g.minYaw,
+            "maxYaw": g.maxYaw,
 
             "save_inputs": g.save_inputs,
             "save_folder": g.save_folder,
@@ -141,10 +139,10 @@ class Global:
             g.point = settings["point"]
 
             g.enablePositionCheck = settings["enablePositionCheck"]
-            g.pair1 = settings["pair1"]
-            g.pair2 = settings["pair2"]
-            g.yawpair1 = settings["yawpair1"]
-            g.yawpair2 = settings["yawpair2"]
+            g.triggerCorner1 = settings["triggerCorner1"]
+            g.triggerCorner2 = settings["triggerCorner2"]
+            g.minYaw = settings["minYaw"]
+            g.maxYaw = settings["maxYaw"]
 
             g.save_inputs = settings["save_inputs"]
             g.save_folder = settings["save_folder"]
@@ -397,8 +395,8 @@ class GUI:
             "yaw_e": self.enableExtraYaw,
             "yaw": g.extra_yaw,
             "coordsCheck": g.enablePositionCheck,
-            "pair1": g.pair1,
-            "pair2": g.pair2,
+            "triggerCorner1": g.triggerCorner1,
+            "triggerCorner2": g.triggerCorner2,
             "point": g.point,
             "bf_goal": g.current_goal
         }
@@ -469,15 +467,15 @@ class GUI:
 
         if g.enablePositionCheck:
             input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
-            g.pair1, g.pair2 = input_pair('Trigger Corner 1', g.pair1), input_pair('Trigger Corner 2', g.pair2)
+            g.triggerCorner1, g.triggerCorner2 = input_pair('Trigger Corner 1', g.triggerCorner1), input_pair('Trigger Corner 2', g.triggerCorner2)
         
         # Yaw Check
         g.enableYawCheck = imgui.checkbox("Enable Yaw Check (Car must be between 2 Yaw values)", g.enableYawCheck)[1]
         
         if g.enableYawCheck:
-            g.yawpair1 = imgui.input_float('Minimum Yaw', g.yawpair1)[1]
-            g.yawpair2 = imgui.input_float('Maximum Yaw', g.yawpair2)[1]
-            print(g.yawpair1, g.yawpair2)
+            g.minYaw = imgui.input_float('Minimum Yaw', g.minYaw)[1]
+            g.maxYaw = imgui.input_float('Maximum Yaw', g.maxYaw)[1]
+            print(g.minYaw, g.maxYaw)
 
     def bf_other_gui(self):
         g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
