@@ -81,7 +81,7 @@ class Global:
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.version_file_lines = requests.get(self.version_file_url).text.split("\n")
         self.version = (self.version_file_lines[0][:30] + "...") if len(self.version_file_lines[0]) > 30 else self.version_file_lines[0]
-        self.current_version = "v0.1.4.4"
+        self.current_version = "v0.1.4.5"
         
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -182,7 +182,7 @@ def update():
         download("bf_specific.py", requests.get(g.version_file_lines[2]))
         download("requirements.txt", requests.get(g.version_file_lines[3]))
 
-        ctypes.windll.user32.MessageBoxW(0, "Done updating, all necessary files have been replaced\nPlease reopen the program", "Update Complete", MB_OK | ICON_INFO)
+        ctypes.windll.user32.MessageBoxW(0, "Done updating, all necessary files have been replaced\nProgram will automatically restart", "Update Complete", MB_OK | ICON_INFO)
 
         return 0
 
