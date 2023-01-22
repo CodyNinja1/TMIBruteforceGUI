@@ -27,7 +27,7 @@ try:
     from tminterface.structs import BFEvaluationDecision, BFEvaluationInfo, BFEvaluationResponse, BFPhase
     from tminterface.interface import TMInterface
     from tminterface.client import Client
-except ImportError:
+except:
     print("Failed to import modules, trying to install...")
     os.system("python -m pip install -r requirements.txt")
     print("Installed requirements")
