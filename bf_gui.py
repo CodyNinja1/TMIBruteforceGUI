@@ -445,7 +445,7 @@ class GUI:
     def bf_conditions_gui(self):
         g.min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', g.min_speed_kmh)[1]
         g.min_cp = imgui.input_int('Minimum Checkpoints', g.min_cp)[1]
-        g.must_touch_ground = imgui.checkbox("Must touch ground", g.must_touch_ground)[1]
+        g.must_touch_ground = imgui.checkbox("Must touch ground (1 or more wheels must be touching any surface)", g.must_touch_ground)[1]
 
         # Position Check
         g.enablePositionCheck = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.enablePositionCheck)[1]
@@ -455,7 +455,7 @@ class GUI:
             g.triggerCorner1, g.triggerCorner2 = input_pair('Trigger Corner 1', g.triggerCorner1), input_pair('Trigger Corner 2', g.triggerCorner2)
         
         # Yaw Check
-        g.enableYawCheck = imgui.checkbox("Enable Yaw Check (Car must be between 2 Yaw values)", g.enableYawCheck)[1]
+        g.enableYawCheck = imgui.checkbox("Enable Yaw check (Car must be between 2 Yaw values)", g.enableYawCheck)[1]
         
         if g.enableYawCheck:
             g.minYaw = imgui.input_float('Minimum Yaw', g.minYaw)[1]
