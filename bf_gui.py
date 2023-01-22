@@ -386,20 +386,6 @@ class GUI:
         self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
         self.backgroundColor = [0.25, 0.5, 0.75, 0.5]
 
-        self.settings = {
-            "font": self.fontPath,
-            "color": self.color,
-            "rgb_speed": self.colorChange,
-            "rgb_e": self.rgbScroll,
-            "yaw_e": self.enableExtraYaw,
-            "yaw": g.extra_yaw,
-            "coordsCheck": g.enablePositionCheck,
-            "triggerCorner1": g.triggerCorner1,
-            "triggerCorner2": g.triggerCorner2,
-            "point": g.point,
-            "bf_goal": g.current_goal
-        }
-
         self.window = self.impl_glfw_init(width=700, height=500)
         gl.glClearColor(*self.backgroundColor)
         imgui.create_context()
