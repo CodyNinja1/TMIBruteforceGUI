@@ -81,7 +81,7 @@ class Global:
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.version_file_lines = requests.get(self.version_file_url).text.split("\n")
         self.version = (self.version_file_lines[0][:30] + "...") if len(self.version_file_lines[0]) > 30 else self.version_file_lines[0]
-        self.current_version = "v0.1.4.2"
+        self.current_version = "v0.1.4.3-patch1"
 
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
@@ -474,7 +474,6 @@ class GUI:
         if g.enableYawCheck:
             g.minYaw = imgui.input_float('Minimum Yaw', g.minYaw)[1]
             g.maxYaw = imgui.input_float('Maximum Yaw', g.maxYaw)[1]
-            print(g.minYaw, g.maxYaw)
 
     def bf_other_gui(self):
         g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
