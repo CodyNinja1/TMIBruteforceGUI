@@ -193,8 +193,8 @@ def update():
 updated = update()
 
 if updated == 0:
-    print("Updated, exiting program")
-    exit()
+    print("Updated, running TMIBruteforceGUI")
+    os.system("python bf_gui.py")
 
 elif updated == 1:
     print("No updates found, running TMIBruteforceGUI")
