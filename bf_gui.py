@@ -492,7 +492,7 @@ class GUI:
 
         imgui.separator()
 
-        imgui.text("Evaluation time")
+        imgui.text("Evaluation time (in seconds)")
         timetext = lambda s, t: round(imgui.input_float(s, t/1000)[1] * 1000, 3)
         g.time_min = timetext("Evaluation start (s)", g.time_min)
         g.time_max = timetext("Evaluation end (s)", g.time_max)
