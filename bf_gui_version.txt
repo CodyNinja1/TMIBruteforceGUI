@@ -1,4 +1,4 @@
-v0.1.4.4
+v0.1.4.5
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui.py
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_specific.py
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/requirements.txt
