@@ -182,7 +182,7 @@ def update():
         download("bf_specific.py", requests.get(g.version_file_lines[2]))
         download("requirements.txt", requests.get(g.version_file_lines[3]))
 
-        ctypes.windll.user32.MessageBoxW(0, "Done updating, all necessary files have been replaced\nProgram will automatically restart", "Update Complete", MB_OK | ICON_INFO)
+        ctypes.windll.user32.MessageBoxW(0, "Done updating, all necessary files have been replaced\nProgram should automatically restart", "Update Complete", MB_OK | ICON_INFO)
 
         return 0
 
