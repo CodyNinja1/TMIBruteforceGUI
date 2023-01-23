@@ -1,7 +1,7 @@
 # TMIBruteforceGUI
 A GUI Wrapper for TMInterface Custom Bruteforce Scripts! No more changing variables in the source code!
 
-![Bruteforce GUI Script Window](https://cdn.discordapp.com/attachments/1032357150099505252/1061996329485729833/script-preview.png)
+![Bruteforce GUI Script Window](https://cdn.discordapp.com/attachments/1023241364751777904/1067087687011541012/TMIBruteforceGUI-preview.png)
 
 ---
 
