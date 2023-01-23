@@ -49,8 +49,8 @@ class Global:
 
         # Conditions
         self.enable_position_check = False
-        self.enableYawCheck = False
-        self.enableCustomYaw = False
+        self.enable_yaw_check = False
+        self.enable_custom_yaw = False
         self.trigger_corner_1 = [0, 0, 0]
         self.trigger_corner_2 = [999, 999, 999]
         self.min_yaw = 0.000
@@ -89,7 +89,7 @@ class Global:
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.version_file_lines = requests.get(self.version_file_url).text.split("\n")
         self.version = (self.version_file_lines[0][:30] + "...") if len(self.version_file_lines[0]) > 30 else self.version_file_lines[0]
-        self.current_version = "v0.1.4.6"
+        self.current_version = "v0.1.5.0"
 
         # Other
         self.settings_file_name = "settings.json"
@@ -118,6 +118,8 @@ class Global:
             "point": g.point,
 
             "enable_position_check": g.enable_position_check,
+            "enable_yaw_check": g.enable_yaw_check,
+            "enable_custom_yaw": g.enable_custom_yaw,
             "trigger_corner_1": g.trigger_corner_1,
             "trigger_corner_2": g.trigger_corner_2,
             "min_yaw": g.min_yaw,
@@ -152,6 +154,8 @@ class Global:
             g.point = settings["point"]
 
             g.enable_position_check = settings["enable_position_check"]
+            g.enable_yaw_check = settings["enable_yaw_check"]
+            g.enable_custom_yaw = settings["enable_custom_yaw"]
             g.trigger_corner_1 = settings["trigger_corner_1"]
             g.trigger_corner_2 = settings["trigger_corner_2"]
             g.min_yaw = settings["min_yaw"]
@@ -350,7 +354,7 @@ class MainClient(Client):
         if g.enable_position_check and not g.isCarInTrigger(self.state): # Position
             return False
         
-        if g.enableYawCheck and not g.isCarInMinMaxYaw(): # Yaw
+        if g.enable_yaw_check and not g.isCarInMinMaxYaw(): # Yaw
             return False
 
         # Specific goal bruteforce
@@ -433,9 +437,9 @@ class GUI:
         pass
 
     def bf_nose_gui(self):
-        self.enableExtraYaw = imgui.checkbox("Enable Custom Yaw Value", self.enableExtraYaw)[1]
+        g.enable_custom_yaw = imgui.checkbox("Enable Custom Yaw Value", g.enable_custom_yaw)[1]
 
-        if self.enableExtraYaw:
+        if g.enable_custom_yaw:
             g.strategy = "custom"
             g.extra_yaw = imgui.input_float('Yaw', g.extra_yaw)[1]
         else:
@@ -457,9 +461,9 @@ class GUI:
             g.trigger_corner_1, g.trigger_corner_2 = input_pair('Trigger Corner 1', g.trigger_corner_1), input_pair('Trigger Corner 2', g.trigger_corner_2)
         
         # Yaw Check
-        g.enableYawCheck = imgui.checkbox("Enable Yaw check (Car must be between 2 Yaw values)", g.enableYawCheck)[1]
+        g.enable_yaw_check = imgui.checkbox("Enable Yaw check (Car must be between 2 Yaw values)", g.enable_yaw_check)[1]
         
-        if g.enableYawCheck:
+        if g.enable_yaw_check:
             g.min_yaw = imgui.input_float('Minimum Yaw', g.min_yaw)[1]
             g.max_yaw = imgui.input_float('Maximum Yaw', g.max_yaw)[1]
 
