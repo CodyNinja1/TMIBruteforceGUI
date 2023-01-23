@@ -48,12 +48,13 @@ class Global:
         self.time_max = 0
 
         # Conditions
-        self.enablePositionCheck = False
+        self.enable_position_check = False
         self.enableYawCheck = False
-        self.triggerCorner1 = [0, 0, 0]
-        self.triggerCorner2 = [999, 999, 999]
-        self.minYaw = 0.000
-        self.maxYaw = 999.000
+        self.enableCustomYaw = False
+        self.trigger_corner_1 = [0, 0, 0]
+        self.trigger_corner_2 = [999, 999, 999]
+        self.min_yaw = 0.000
+        self.max_yaw = 999.000
         self.min_speed_kmh = 0
         self.min_cp = 0
         self.must_touch_ground = False
@@ -71,8 +72,15 @@ class Global:
         self.save_folder = "current"
         self.save_only_results = False
 
-        # Other
-        self.settings_file_name = "settings.json"
+        # Color
+        self.color = [0.25, 0.5, 0.75, 0.5] # background color
+        self.bgcolor = [0.25, 0.5, 0.75, 0.5] # this is from glfw (don't ask ok)
+        self.colorChange = 0 # you can change this if you want
+        self.rgbScroll = False # rgb background flag
+        self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
+        self.backgroundColor = [0.25, 0.5, 0.75, 0.5]
+
+        # Improvement Graph
         self.improvements_list = [0.0]
         self.improvement_graph = False
         self.improvement_graph_scale = 0
@@ -82,11 +90,14 @@ class Global:
         self.version_file_lines = requests.get(self.version_file_url).text.split("\n")
         self.version = (self.version_file_lines[0][:30] + "...") if len(self.version_file_lines[0]) > 30 else self.version_file_lines[0]
         self.current_version = "v0.1.4.5"
+
+        # Other
+        self.settings_file_name = "settings.json"
         
     def unpackCoordinates(self):
         """Execute only once, on simulation start"""
         (self.minX, self.maxX), (self.minY, self.maxY), (self.minZ, self.maxZ) = [
-            sorted((round(self.triggerCorner1[i], 2), round(self.triggerCorner2[i], 2))) for i in range(3)
+            sorted((round(self.trigger_corner_1[i], 2), round(self.trigger_corner_2[i], 2))) for i in range(3)
         ]
 
     def isCarInTrigger(self, state):
@@ -96,7 +107,7 @@ class Global:
     
     def isCarInMinMaxYaw(self):
         yaw = g.rotation[0]
-        return g.minYaw <= yaw <= g.maxYaw
+        return g.min_yaw <= yaw <= g.max_yaw
 
 
     def save_settings(self, filename):
@@ -106,23 +117,26 @@ class Global:
             "extra_yaw": g.extra_yaw,
             "point": g.point,
 
-            "enablePositionCheck": g.enablePositionCheck,
-            "triggerCorner1": g.triggerCorner1,
-            "triggerCorner2": g.triggerCorner2,
-            "minYaw": g.minYaw,
-            "maxYaw": g.maxYaw,
+            "enable_position_check": g.enable_position_check,
+            "trigger_corner_1": g.trigger_corner_1,
+            "trigger_corner_2": g.trigger_corner_2,
+            "min_yaw": g.min_yaw,
+            "max_yaw": g.max_yaw,
 
             "save_inputs": g.save_inputs,
             "save_folder": g.save_folder,
             "save_only_results": g.save_only_results,
+
+            "background_color": g.color,
+
+            "improvement_graph": g.improvement_graph,
 
             "time_min": g.time_min,
             "time_max": g.time_max,
             "min_speed_kmh": g.min_speed_kmh,
             "min_cp": g.min_cp,
             "must_touch_ground": g.must_touch_ground,
-            "settings_file_name": g.settings_file_name,
-            "improvement_graph": g.improvement_graph
+            "settings_file_name": g.settings_file_name
         }
 
         with open(filename, "w") as s:
@@ -137,15 +151,19 @@ class Global:
             g.extra_yaw = settings["extra_yaw"]
             g.point = settings["point"]
 
-            g.enablePositionCheck = settings["enablePositionCheck"]
-            g.triggerCorner1 = settings["triggerCorner1"]
-            g.triggerCorner2 = settings["triggerCorner2"]
-            g.minYaw = settings["minYaw"]
-            g.maxYaw = settings["maxYaw"]
+            g.enable_position_check = settings["enable_position_check"]
+            g.trigger_corner_1 = settings["trigger_corner_1"]
+            g.trigger_corner_2 = settings["trigger_corner_2"]
+            g.min_yaw = settings["min_yaw"]
+            g.max_yaw = settings["max_yaw"]
 
             g.save_inputs = settings["save_inputs"]
             g.save_folder = settings["save_folder"]
             g.save_only_results = settings["save_only_results"]
+
+            g.color = settings["background_color"]
+
+            g.improvement_graph = settings["improvement_graph"]
 
             g.time_min = settings["time_min"]
             g.time_max = settings["time_max"]
@@ -153,7 +171,6 @@ class Global:
             g.min_cp = settings["min_cp"]
             g.must_touch_ground = settings["must_touch_ground"]
             g.settings_file_name = settings["settings_file_name"]
-            g.improvement_graph = settings["improvement_graph"]
 
 g = Global()
 
@@ -330,7 +347,7 @@ class MainClient(Client):
         if g.must_touch_ground and nb_wheels_on_ground(self.state) == 0: # Touch ground
             return False
 
-        if g.enablePositionCheck and not g.isCarInTrigger(self.state): # Position
+        if g.enable_position_check and not g.isCarInTrigger(self.state): # Position
             return False
         
         if g.enableYawCheck and not g.isCarInMinMaxYaw(): # Yaw
@@ -377,25 +394,10 @@ class MainClient(Client):
 
 class GUI:
     def __init__(self):
-        self.fontPath = "" # font
-        self.color = [0.25, 0.5, 0.75, 0.5] # background color
-        self.bgcolor = [0.25, 0.5, 0.75, 0.5] # this is from glfw (don't ask ok)
-        self.colorChange = 0 # you can change this if you want
-        self.rgbScroll = False # rgb background flag
-        self.enableExtraYaw = False
-        self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
-        self.backgroundColor = [0.25, 0.5, 0.75, 0.5]
-
         self.window = self.impl_glfw_init(width=700, height=500)
-        gl.glClearColor(*self.backgroundColor)
+        gl.glClearColor(*g.backgroundColor)
         imgui.create_context()
         self.impl = GlfwRenderer(self.window)
-        if self.fontPath:
-            io = imgui.get_io()
-            io.fonts.clear()
-            io.font_global_scale = 1
-            new_font = io.fonts.add_font_from_file_ttf(self.fontPath, 20, io.fonts.get_glyph_ranges_latin())
-            self.impl.refresh_font_texture()
 
         self.loop()
 
@@ -448,18 +450,18 @@ class GUI:
         g.must_touch_ground = imgui.checkbox("Must touch ground (1 or more wheels must be touching any surface)", g.must_touch_ground)[1]
 
         # Position Check
-        g.enablePositionCheck = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.enablePositionCheck)[1]
+        g.enable_position_check = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.enable_position_check)[1]
 
-        if g.enablePositionCheck:
+        if g.enable_position_check:
             input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
-            g.triggerCorner1, g.triggerCorner2 = input_pair('Trigger Corner 1', g.triggerCorner1), input_pair('Trigger Corner 2', g.triggerCorner2)
+            g.trigger_corner_1, g.trigger_corner_2 = input_pair('Trigger Corner 1', g.trigger_corner_1), input_pair('Trigger Corner 2', g.trigger_corner_2)
         
         # Yaw Check
         g.enableYawCheck = imgui.checkbox("Enable Yaw check (Car must be between 2 Yaw values)", g.enableYawCheck)[1]
         
         if g.enableYawCheck:
-            g.minYaw = imgui.input_float('Minimum Yaw', g.minYaw)[1]
-            g.maxYaw = imgui.input_float('Maximum Yaw', g.maxYaw)[1]
+            g.min_yaw = imgui.input_float('Minimum Yaw', g.min_yaw)[1]
+            g.max_yaw = imgui.input_float('Maximum Yaw', g.max_yaw)[1]
 
     def bf_other_gui(self):
         g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
@@ -484,7 +486,7 @@ class GUI:
         imgui.begin("Evaluation Settings", True)
 
         imgui.text("Goal and parameters")
-        g.current_goal = imgui.combo("Bruteforce Goal", g.current_goal, self.goals)[1]
+        g.current_goal = imgui.combo("Bruteforce Goal", g.current_goal, g.goals)[1]
         if   g.current_goal == 0: self.bf_speed_gui()
         elif g.current_goal == 1: self.bf_nose_gui()
         elif g.current_goal == 2: self.bf_height_gui()
@@ -571,20 +573,20 @@ class GUI:
     def customize(self):
         imgui.begin("Customize", True)
 
-        if imgui.button("Start RGB scroll" if not self.rgbScroll else "Stop RGB Scroll"):
-            self.rgbScroll = not self.rgbScroll
+        if imgui.button("Start RGB scroll" if not g.rgbScroll else "Stop RGB Scroll"):
+            g.rgbScroll = not g.rgbScroll
 
-        if self.rgbScroll:
-            if not any(self.color[:3]): self.color = [(i + 1) / 4 for i in range(4)]
-            self.colorChange = imgui.slider_float(
-                "Speed", self.colorChange,
+        if g.rgbScroll:
+            if not any(g.color[:3]): g.color = [(i + 1) / 4 for i in range(4)]
+            g.colorChange = imgui.slider_float(
+                "Speed", g.colorChange,
                 min_value=0, max_value=32,
                 power=1
             )[1]
 
         else:
-            self.color = list(imgui.color_edit4("Background", *self.color, show_alpha=False)[1])
-            self.backgroundColor = self.color.copy()
+            g.color = list(imgui.color_edit4("Background", *g.color, show_alpha=False)[1])
+            g.backgroundColor = g.color.copy()
 
         imgui.end()
 
@@ -601,14 +603,14 @@ class GUI:
 
             imgui.render()
 
-            if self.rgbScroll:
-                self.color = r2h(*self.color) # convert to hsv
-                self.color[0] = (self.color[0] + self.colorChange/1000000) % 1 # add hue (division is because of very high FPS)
-                self.color = h2r(*self.color) # convert back into rgb
+            if g.rgbScroll:
+                g.color = r2h(*g.color) # convert to hsv
+                g.color[0] = (g.color[0] + g.colorChange/1000000) % 1 # add hue (division is because of very high FPS)
+                g.color = h2r(*g.color) # convert back into rgb
 
-            self.backgroundColor = self.color.copy() # set the self.color
+            g.backgroundColor = g.color.copy() # set the self.color
 
-            gl.glClearColor(*self.backgroundColor)
+            gl.glClearColor(*g.backgroundColor)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
             self.impl.render(imgui.get_draw_data())
