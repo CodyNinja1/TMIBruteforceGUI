@@ -36,7 +36,9 @@ We are actively trying to improve the tool in any way we can, whether it's addin
 If you have any suggestions feel free to make a pull request or open an issue
 
 
-"its good" -Stuntlover
+"its good" - Stuntlover
+
+"Idk how it works but ok sure i guess its good" - Miku
 
 ---
 
