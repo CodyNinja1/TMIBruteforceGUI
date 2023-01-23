@@ -5,3 +5,4 @@ PyOpenGL==3.1.6
 pywin32==305
 requests==2.28.1
 tminterface==0.6
+wheel
