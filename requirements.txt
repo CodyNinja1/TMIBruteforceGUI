@@ -1,3 +1,4 @@
+wheel
 glfw==2.5.5
 imgui==1.4.1
 numpy==1.23.5
@@ -5,4 +6,3 @@ PyOpenGL==3.1.6
 pywin32==305
 requests==2.28.1
 tminterface==0.6
-wheel
