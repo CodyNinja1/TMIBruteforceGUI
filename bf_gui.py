@@ -30,6 +30,7 @@ try:
 except:
     print("Failed to import modules, trying to install...")
     os.system("python -m pip install -r requirements.txt")
+    os.system("python -m pip install requests")
     print("Installed requirements")
 
 class Global:
