@@ -12,17 +12,13 @@ There's a [TMIBruteforceGUI Discord server!](https://discord.gg/Pr4beaVxhf), if 
 
 First, install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K) or from the [official Python website](https://www.python.org/downloads/release/python-3111/).
 
-After Python is done installing or you already have Python, go to [the latest release](https://github.com/CodyNinja1/TMIBruteforceGUI/releases/latest) and download the the ZIP file
+Now install the Visual C++ Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/, after the launcher is done setting up, press `Desktop Development with C++` and then `Install` in the bottom right
+
+After those are done installing or you already have Python and the C++ Build Tools, go to [the latest release](https://github.com/CodyNinja1/TMIBruteforceGUI/releases/latest) and download the the ZIP file
 
 Once the ZIP is downloaded, extract it.
 
-Make sure to install the Visual C++ Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/
-
-After you've done those, open your Command Prompt/Terminal in the extracted folder and type run `python -m pip install -r requirements.txt`
-
-After those are done installing you can open TMInterface.
-
-In that same Command Prompt/Terminal Process, type `python bf_gui.py` and hit enter. 
+Open TMInterface and run the bf_gui.py file with Python, either by double clicking it or running `python bf_gui.py` in your terminal in that directory
 
 If there's a warning saying there's a new update, it's recommended to press Yes, it will automatically update all needed files, then re-open bf_gui.py.
 
