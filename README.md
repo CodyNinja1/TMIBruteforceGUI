@@ -29,8 +29,6 @@ Huge thanks to Shweetz, Sai-Moen, and Stuntlover for actively working on this pr
 
 We are actively trying to improve the tool in any way we can, whether it's adding new scripts, fixing bugs, etc.
 
-If you have any suggestions feel free to make a pull request or open an issue
-
 
 "its good" - Stuntlover
 
