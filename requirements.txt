@@ -1,5 +1,4 @@
 wheel
-requests
 tminterface==0.6
 glfw==2.5.5
 imgui==1.4.1
