@@ -5,7 +5,7 @@ import ctypes
 import math
 import os
 import signal
-import struct
+from struct import unpack
 import sys
 import threading
 import time
@@ -27,6 +27,7 @@ try:
     from tminterface.structs import BFEvaluationDecision, BFEvaluationInfo, BFEvaluationResponse, BFPhase
     from tminterface.interface import TMInterface
     from tminterface.client import Client
+    from tminterface.constants import SIMULATION_WHEELS_SIZE
 except:
     print("Failed to import modules, trying to install...")
     os.system("python -m pip install -r requirements.txt")
@@ -60,6 +61,7 @@ class Global:
         self.min_speed_kmh = 0
         self.min_cp = 0
         self.must_touch_ground = False
+        self.min_wheels_on_ground = 0
 
         # Result
         self.current_best = -1
@@ -91,7 +93,7 @@ class Global:
         self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
         self.version_file_lines = requests.get(self.version_file_url).text.split("\n")
         self.version = (self.version_file_lines[0][:30] + "...") if len(self.version_file_lines[0]) > 30 else self.version_file_lines[0]
-        self.current_version = "v0.1.5.0"
+        self.current_version = "v0.1.6.0"
 
         # Other
         self.settings_file_name = "settings.json"
@@ -140,6 +142,7 @@ class Global:
             "min_speed_kmh": g.min_speed_kmh,
             "min_cp": g.min_cp,
             "must_touch_ground": g.must_touch_ground,
+            "min_wheels_on_ground": g.min_wheels_on_ground,
             "settings_file_name": g.settings_file_name
         }
 
@@ -176,6 +179,7 @@ class Global:
             g.min_speed_kmh = settings["min_speed_kmh"]
             g.min_cp = settings["min_cp"]
             g.must_touch_ground = settings["must_touch_ground"]
+            g.min_wheels_on_ground = settings["min_wheels_on_ground"]
             g.settings_file_name = settings["settings_file_name"]
 
 g = Global()
@@ -261,8 +265,15 @@ def get_nb_cp(state):
     return len([time for time, _ in state.cp_data.cp_times if time != -1])
 
 WHEEL_OFFSETS = tuple([(3056 // 4) * i for i in range(4)])
+WHEELS_SIZE = tuple([(SIMULATION_WHEELS_SIZE >> 2) * i for i in range(4)])
+def getWheelContact(state):
+        return [
+            bool(unpack('i', state.simulation_wheels[i+292:i+296]))
+            for i in WHEELS_SIZE
+        ]
+
 def nb_wheels_on_ground(state):
-    return sum([struct.unpack('i', state.simulation_wheels[o+292:o+296])[0] for o in WHEEL_OFFSETS])
+    return sum(list(getWheelContact(state)))
 
 class MainClient(Client):
     def __init__(self) -> None:
@@ -351,6 +362,9 @@ class MainClient(Client):
             return False
 
         if g.must_touch_ground and nb_wheels_on_ground(self.state) == 0: # Touch ground
+            return False
+        
+        if g.min_wheels_on_ground > nb_wheels_on_ground(self.state):
             return False
 
         if g.enable_position_check and not g.isCarInTrigger(self.state): # Position
@@ -454,6 +468,8 @@ class GUI:
         g.min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', g.min_speed_kmh)[1]
         g.min_cp = imgui.input_int('Minimum Checkpoints', g.min_cp)[1]
         g.must_touch_ground = imgui.checkbox("Must touch ground (1 or more wheels must be touching any surface)", g.must_touch_ground)[1]
+        if g.must_touch_ground:
+            g.min_wheels_on_ground = imgui.input_int("Minimum amount of wheels touching any surface", g.min_wheels_on_ground)[1]
 
         # Position Check
         g.enable_position_check = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.enable_position_check)[1]
