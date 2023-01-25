@@ -37,6 +37,7 @@ class Global:
     """Add your variables you want to use globally in here"""
 
     def __init__(self):
+        self.registered_ids = []
         self.is_registered = False
         self.server = ""
 
@@ -622,16 +623,26 @@ class GUI:
             glfw.swap_buffers(self.window)
 
         self.impl.shutdown()
-        glfw.terminate()
+        glfw.terminate()  
 
         g.save_settings("autosave.json")
         exit()
 
 def main():
-    server_name = f'TMInterface{sys.argv[1]}' if len(sys.argv) > 1 else 'TMInterface0'
-    print(f'Connecting to {server_name}...')
-    client = MainClient()
-    iface = TMInterface(server_name)
+    if len(sys.argv) > 2:
+        for id in range(int(sys.argv[1]), int(sys.argv[2]) + 1):
+                server_name = f'TMInterface{id}'
+                client = MainClient()
+                iface = TMInterface(server_name)
+                iface.register(client)
+                g.registered_ids.append(id)
+
+    else:
+        server_name = f'TMInterface{sys.argv[1]}' if len(sys.argv) > 1 else 'TMInterface0'
+        print(f'Connecting to {server_name}...')
+        client = MainClient()
+        iface = TMInterface(server_name)
+        iface.register(client)
 
     def handler(signum, frame):
         iface.close()
@@ -644,7 +655,6 @@ def main():
 
     signal.signal(signal.SIGBREAK, handler)
     signal.signal(signal.SIGINT, handler)
-    iface.register(client)
 
     while not iface.registered:
         time.sleep(0)
