@@ -1,5 +1,5 @@
 v1.0.0
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui.py
-https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_specific.py
+https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_goals.py
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/global_funcs.py
 https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/requirements.txt
