@@ -1,23 +1,8 @@
-# Shoutout to Stuntlover, SaiMoen, and Shweetz
-
-import colorsys
-import ctypes
-import math
-import os
-import signal
-from struct import unpack
-import sys
-import threading
-import time
-import json
-
-from bf_specific import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
-
 try:
     import numpy as np
     import glfw
-    import imgui
     import requests
+    import imgui
     import numpy
     import OpenGL.GL as gl
     import win32api
@@ -28,205 +13,46 @@ try:
     from tminterface.interface import TMInterface
     from tminterface.client import Client
     from tminterface.constants import SIMULATION_WHEELS_SIZE
+
 except:
     print("Failed to import modules, trying to install...")
     os.system("python -m pip install -r requirements.txt")
     os.system("python -m pip install requests")
     print("Installed requirements")
 
-class Global:
-    """Add your variables you want to use globally in here"""
+import colorsys
+import math
+import os
+import signal
+from struct import unpack
+import sys
+import threading
+import time
 
-    def __init__(self):
-        self.registered_ids = []
-        self.is_registered = False
-        self.server = ""
-
-        # Goal
-        self.current_goal = 0 # 0 Speed, 1 Nosepos, 2 Height, 3 Point
-        self.strategy = "any"
-        self.extra_yaw = 0
-        self.point = [0, 0, 0]
-        self.time_min = 0
-        self.time_max = 0
-
-        # Conditions
-        self.enable_position_check = False
-        self.enable_yaw_check = False
-        self.enable_custom_yaw = False
-        self.trigger_corner_1 = [0, 0, 0]
-        self.trigger_corner_2 = [999, 999, 999]
-        self.min_yaw = 0.000
-        self.max_yaw = 999.000
-        self.min_speed_kmh = 0
-        self.min_cp = 0
-        self.must_touch_ground = False
-        self.min_wheels_on_ground = 0
-
-        # Result
-        self.current_best = -1
-        self.improvement_time = 0
-        self.improvements = 0
-        self.position = [0, 0, 0]
-        self.velocity = [0, 0, 0]
-        self.rotation = [0, 0, 0]
-
-        # Saving Inputs
-        self.save_inputs = False
-        self.save_folder = "current"
-        self.save_only_results = False
-
-        # Color
-        self.color = [0.25, 0.5, 0.75, 0.5] # background color
-        self.bgcolor = [0.25, 0.5, 0.75, 0.5] # this is from glfw (don't ask ok)
-        self.colorChange = 0 # you can change this if you want
-        self.rgbScroll = False # rgb background flag
-        self.goals = ["Speed", "Nosebug position", "Height", "Minimum distance from point"]
-        self.backgroundColor = [0.25, 0.5, 0.75, 0.5]
-
-        # Improvement Graph
-        self.improvements_list = [0.0]
-        self.improvement_graph = False
-        self.improvement_graph_scale = 0
-
-        # Updates
-        self.version_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt' # This should always stay the same
-        self.version_file_lines = requests.get(self.version_file_url).text.split("\n")
-        self.version = (self.version_file_lines[0][:30] + "...") if len(self.version_file_lines[0]) > 30 else self.version_file_lines[0]
-        self.current_version = "v0.1.6.0"
-
-        # Other
-        self.settings_file_name = "settings.json"
-        
-    def unpackCoordinates(self):
-        """Execute only once, on simulation start"""
-        (self.minX, self.maxX), (self.minY, self.maxY), (self.minZ, self.maxZ) = [
-            sorted((round(self.trigger_corner_1[i], 2), round(self.trigger_corner_2[i], 2))) for i in range(3)
-        ]
-
-    def isCarInTrigger(self, state):
-        """Execute every tick where is_eval_time() is True"""
-        car_x, car_y, car_z = state.position
-        return self.minX <= car_x <= self.maxX and self.minY <= car_y <= self.maxY and self.minZ <= car_z <= self.maxZ
+try:
+    import global_funcs as g
+    from bf_goals import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
+except: # This is kinda stupid cuz its just installing it here too :xdd: but idk
+    update_file_url = 'https://raw.githubusercontent.com/CodyNinja1/TMIBruteforceGUI/main/bf_gui_version.txt'
+    update_file_lines = requests.get(update_file_url).text.split("\n")
     
-    def isCarInMinMaxYaw(self):
-        yaw = g.rotation[0]
-        return g.min_yaw <= yaw <= g.max_yaw
-
-
-    def save_settings(self, filename):
-        """Save bruteforce settings, takes filename as an argument"""
-        settings = {
-            "current_goal": g.current_goal,
-            "extra_yaw": g.extra_yaw,
-            "point": g.point,
-
-            "enable_position_check": g.enable_position_check,
-            "enable_yaw_check": g.enable_yaw_check,
-            "enable_custom_yaw": g.enable_custom_yaw,
-            "trigger_corner_1": g.trigger_corner_1,
-            "trigger_corner_2": g.trigger_corner_2,
-            "min_yaw": g.min_yaw,
-            "max_yaw": g.max_yaw,
-
-            "save_inputs": g.save_inputs,
-            "save_folder": g.save_folder,
-            "save_only_results": g.save_only_results,
-
-            "background_color": g.color,
-
-            "improvement_graph": g.improvement_graph,
-
-            "time_min": g.time_min,
-            "time_max": g.time_max,
-            "min_speed_kmh": g.min_speed_kmh,
-            "min_cp": g.min_cp,
-            "must_touch_ground": g.must_touch_ground,
-            "min_wheels_on_ground": g.min_wheels_on_ground,
-            "settings_file_name": g.settings_file_name
-        }
-
-        with open(filename, "w") as s:
-            json.dump(settings, s, sort_keys=True, indent=4)
-
-    def load_settings(self, filename):
-        """Load bruteforce settings, takes filename as an argument"""
-        with open(filename, "r") as set:
-            settings = json.load(set)
-
-            g.current_goal = settings["current_goal"]
-            g.extra_yaw = settings["extra_yaw"]
-            g.point = settings["point"]
-
-            g.enable_position_check = settings["enable_position_check"]
-            g.enable_yaw_check = settings["enable_yaw_check"]
-            g.enable_custom_yaw = settings["enable_custom_yaw"]
-            g.trigger_corner_1 = settings["trigger_corner_1"]
-            g.trigger_corner_2 = settings["trigger_corner_2"]
-            g.min_yaw = settings["min_yaw"]
-            g.max_yaw = settings["max_yaw"]
-
-            g.save_inputs = settings["save_inputs"]
-            g.save_folder = settings["save_folder"]
-            g.save_only_results = settings["save_only_results"]
-
-            g.color = settings["background_color"]
-
-            g.improvement_graph = settings["improvement_graph"]
-
-            g.time_min = settings["time_min"]
-            g.time_max = settings["time_max"]
-            g.min_speed_kmh = settings["min_speed_kmh"]
-            g.min_cp = settings["min_cp"]
-            g.must_touch_ground = settings["must_touch_ground"]
-            g.min_wheels_on_ground = settings["min_wheels_on_ground"]
-            g.settings_file_name = settings["settings_file_name"]
-
-g = Global()
-
-def update():
-    """
-    Prompts user to update if they are on an out of date version, automatically replaces old files
-    Returns 0 if it was updated, 1 if not, 2 if there was a new update but the user declined it
-    """
-    accepted_update = None 
-
-    ICON_INFO = 0x40
-    ICON_WARNING = 0x30
-    MB_OK = 0x0
-    MB_YESNO = 0x4
-
-    print("Checking for updates...")
-    if g.version != g.current_version:
-        print(f"Found new update, new version: {g.version}, current version: {g.current_version}")
-        accepted_update = ctypes.windll.user32.MessageBoxW(0, f"New update available! Would you like to install the newest version?\n(Warning: This will replace any code you have changed)", f"{g.version} Version Available!", ICON_WARNING | MB_YESNO)
+    if not os.path.exists("global_funcs.py"):
+        with open("global_funcs.py", "x") as globf: pass
     
+        with open("global_funcs.py" "wb") as globf:
+            globf.write(requests.get(update_file_lines[3]).content)
+            
 
-    if accepted_update == 6:
-        download = lambda file_name, file_url : open(file_name, 'wb').write(file_url.content)
+update = g.update()
 
-        download("bf_gui.py", requests.get(g.version_file_lines[1]))
-        download("bf_specific.py", requests.get(g.version_file_lines[2]))
-        download("requirements.txt", requests.get(g.version_file_lines[3]))
-
-        ctypes.windll.user32.MessageBoxW(0, "Done updating, all necessary files have been replaced\nProgram should automatically restart", "Update Complete", MB_OK | ICON_INFO)
-
-        return 0
-
-    elif accepted_update == 7: return 2
-
-    else: return 1
-
-updated = update()
-
-if updated == 0:
+if update == 0:
     print("Updated, running TMIBruteforceGUI")
     os.system("python bf_gui.py")
 
-elif updated == 1:
+elif update == 1:
     print("No updates found, running TMIBruteforceGUI")
 
-elif updated == 2:
+elif update == 2:
     print("Declined update")
 
 
@@ -284,12 +110,12 @@ class MainClient(Client):
 
     def on_registered(self, iface: TMInterface) -> None:
         print(f'Registered to {iface.server_name}')
-        g.is_registered = True
-        g.server = iface.server_name
+        g.settings_dict["is_registered"] = True
+        g.settings_dict["server"] = iface.server_name
 
     def on_deregistered(self, iface: TMInterface):
         print(f'Deregistered from {iface.server_name}')
-        g.is_registered = False
+        g.settings_dict["is_registered"] = False
 
     def on_simulation_begin(self, iface):
         iface.execute_command('set controller bruteforce')
@@ -298,16 +124,16 @@ class MainClient(Client):
         self.time = -1
         self.current = -1
         self.iterations = 0
-        g.current_best = -1
-        g.improvement_time = -1
-        g.improvements = 0
-        g.improvements_list = [0.0]
+        g.settings_dict["current_best"] = -1
+        g.settings_dict["improvement_time"] = -1
+        g.settings_dict["improvements"] = 0
+        g.settings_dict["improvements_list"] = [0.0]
 
         g.unpackCoordinates()
-        if g.current_goal == 0: self.goal = GoalSpeed()
-        if g.current_goal == 1: self.goal = GoalNosepos()
-        if g.current_goal == 2: self.goal = GoalHeight()
-        if g.current_goal == 3: self.goal = GoalPoint()
+        if g.settings_dict["current_goal"] == 0: self.goal = GoalSpeed()
+        if g.settings_dict["current_goal"] == 1: self.goal = GoalNosepos()
+        if g.settings_dict["current_goal"] == 2: self.goal = GoalHeight()
+        if g.settings_dict["current_goal"] == 3: self.goal = GoalPoint()
 
     def on_bruteforce_evaluate(self, iface, info: BFEvaluationInfo) -> BFEvaluationResponse:
         self.time = info.time
@@ -316,7 +142,7 @@ class MainClient(Client):
         response = BFEvaluationResponse()
         response.decision = BFEvaluationDecision.DO_NOTHING
 
-        if g.time_min > self.time: # early return
+        if g.settings_dict["time_min"] > self.time: # early return
             return response
 
         self.state = iface.get_simulation_state()
@@ -325,29 +151,30 @@ class MainClient(Client):
         # Check the all the ticks in eval_time and print the best one when run is in last tick of eval_time
         if self.phase == BFPhase.INITIAL:
             if self.is_eval_time() and self.is_better():
-                g.current_best = self.current
-                g.improvement_time = round(self.time/1000, 2)
-                g.position = [round(pos, 3) for pos in self.state.position]
-                g.velocity = [round(vel, 3) for vel in self.state.velocity]
-                g.rotation = [round(to_deg(ypr), 3) for ypr in self.state.yaw_pitch_roll]
+                g.settings_dict["current_best"] = self.current
+                g.settings_dict["improvement_time"] = round(self.time/1000, 2)
+                g.settings_dict["position"] = [round(pos, 3) for pos in self.state.position]
+                g.settings_dict["velocity"] = [round(vel, 3) for vel in self.state.velocity]
+                g.settings_dict["rotation"] = [round(to_deg(ypr), 3) for ypr in self.state.yaw_pitch_roll]
 
             if self.is_max_time():
-                self.goal.print(g)
+                self.goal.print(g.Global())
 
         # Search phase only impacts decision, logic is in initial phase
         elif self.phase == BFPhase.SEARCH:
             if self.is_eval_time() and self.is_better():
                 response.decision = BFEvaluationDecision.ACCEPT
-                g.improvements += 1
-                g.improvements_list.append(float(g.current_best)) # float because imgui doesn't like ints (racist)
+                g.settings_dict["improvements"] += 1
+                g.settings_dict["improvements_list"].append(float(g.settings_dict["current_best"]))
+
                 self.iterations += 1
-                if g.save_inputs:
+                if g.settings_dict["save_inputs"]:
                     self.save_result(filename=f"improvement_{g.improvements}.txt", event_buffer=iface.get_event_buffer())
 
             elif self.is_past_eval_time():
                 response.decision = BFEvaluationDecision.REJECT
                 self.iterations += 1
-                if g.save_inputs and not g.save_only_results:
+                if g.settings_dict["save_inputs"] and not g.settings_dict["save_only_results"]:
                     self.save_result(filename=f"iteration_{self.iterations}.txt", event_buffer=iface.get_event_buffer())
 
         return response
@@ -355,36 +182,36 @@ class MainClient(Client):
     def is_better(self):
 
         # Conditions
-        if g.min_speed_kmh > numpy.linalg.norm(self.state.velocity) * 3.6: # Min speed
+        if g.settings_dict["min_speed_kmh"] > numpy.linalg.norm(self.state.velocity) * 3.6: # Min speed
             return False
 
-        if g.min_cp > get_nb_cp(self.state): # Min CP
+        if g.settings_dict["min_cp"] > get_nb_cp(self.state): # Min CP
             return False
 
-        if g.must_touch_ground and nb_wheels_on_ground(self.state) == 0: # Touch ground
+        if g.settings_dict["must_touch_ground"] and nb_wheels_on_ground(self.state) == 0: # Touch ground
             return False
         
-        if g.min_wheels_on_ground > nb_wheels_on_ground(self.state):
+        if g.settings_dict["min_wheels_on_ground"] > nb_wheels_on_ground(self.state):
             return False
 
-        if g.enable_position_check and not g.isCarInTrigger(self.state): # Position
+        if g.settings_dict["enable_position_check"] and not g.isCarInTrigger(self.state): # Position
             return False
         
-        if g.enable_yaw_check and not g.isCarInMinMaxYaw(): # Yaw
+        if g.settings_dict["enable_yaw_check"] and not g.isCarInMinMaxYaw(): # Yaw
             return False
 
         # Specific goal bruteforce
         # This line is a bit complicated, but for example, for speed it means: GoalSpeed.is_better(MainClient, g)
-        return self.goal.is_better(self, g)
+        return self.goal.is_better(self, g.Global())
 
     def is_eval_time(self):
-        return g.time_min <= self.time <= g.time_max
+        return g.settings_dict["time_min"] <= self.time <= g.settings_dict["time_max"]
 
     def is_past_eval_time(self):
-        return self.time > g.time_max
+        return self.time > g.settings_dict["time_max"]
 
     def is_max_time(self):
-        return self.time == g.time_max
+        return self.time == g.settings_dict["time_max"]
 
     def on_checkpoint_count_changed(self, iface: TMInterface, current: int, target: int):
         if current == target:
@@ -415,7 +242,7 @@ class MainClient(Client):
 class GUI:
     def __init__(self):
         self.window = self.impl_glfw_init(width=700, height=500)
-        gl.glClearColor(*g.backgroundColor)
+        gl.glClearColor(*g.settings_dict["background_color"])
         imgui.create_context()
         self.impl = GlfwRenderer(self.window)
 
@@ -453,75 +280,75 @@ class GUI:
         pass
 
     def bf_nose_gui(self):
-        g.enable_custom_yaw = imgui.checkbox("Enable Custom Yaw Value", g.enable_custom_yaw)[1]
+        g.settings_dict["enable_custom_yaw"] = imgui.checkbox("Enable Custom Yaw Value", g.settings_dict["enable_custom_yaw"])[1]
 
-        if g.enable_custom_yaw:
-            g.strategy = "custom"
-            g.extra_yaw = imgui.input_float('Yaw', g.extra_yaw)[1]
+        if g.settings_dict["enable_custom_yaw"]:
+            g.settings_dict["strategy"] = "custom"
+            g.settings_dict["extra_yaw"] = imgui.input_float('Yaw', g.settings_dict["extra_yaw"])[1]
         else:
-            g.strategy = "any"
+            g.settings_dict["strategy"] = "any"
 
     def bf_point_gui(self):
-        g.point = imgui.input_float3('Point Coordinates', *g.point)[1]
+        g.settings_dict["point"] = imgui.input_float3('Point Coordinates', *g.settings_dict["point"])[1]
 
     def bf_conditions_gui(self):
-        g.min_speed_kmh = imgui.input_int('Minimum Speed (km/h)', g.min_speed_kmh)[1]
-        g.min_cp = imgui.input_int('Minimum Checkpoints', g.min_cp)[1]
-        g.must_touch_ground = imgui.checkbox("Must touch ground (1 or more wheels must be touching any surface)", g.must_touch_ground)[1]
-        if g.must_touch_ground:
-            g.min_wheels_on_ground = imgui.input_int("Minimum amount of wheels touching any surface", g.min_wheels_on_ground)[1]
+        g.settings_dict["min_speed_kmh"] = imgui.input_int('Minimum Speed (km/h)', g.settings_dict["min_speed_kmh"])[1]
+        g.settings_dict["min_cp"] = imgui.input_int('Minimum Checkpoints', g.settings_dict["min_cp"])[1]
+        g.settings_dict["must_touch_ground"] = imgui.checkbox("Must touch ground (1 or more wheels must be touching any surface)", g.settings_dict["must_touch_ground"])[1]
+        if g.settings_dict["must_touch_ground"]:
+            g.settings_dict["min_wheels_on_ground"] = imgui.input_int("Minimum amount of wheels touching any surface", g.settings_dict["min_wheels_on_ground"])[1]
 
         # Position Check
-        g.enable_position_check = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.enable_position_check)[1]
+        g.settings_dict["enable_position_check"] = imgui.checkbox("Enable Position check (Car must be inside Trigger)", g.settings_dict["enable_position_check"])[1]
 
-        if g.enable_position_check:
+        if g.settings_dict["enable_position_check"]:
             input_pair = lambda s, pair: imgui.input_float3(s, *pair)[1]
-            g.trigger_corner_1, g.trigger_corner_2 = input_pair('Trigger Corner 1', g.trigger_corner_1), input_pair('Trigger Corner 2', g.trigger_corner_2)
+            g.settings_dict["trigger_corner_1"], g.settings_dict["trigger_corner_2"] = input_pair('Trigger Corner 1', g.settings_dict["trigger_corner_1"]), input_pair('Trigger Corner 2', g.settings_dict["trigger_corner_2"])
         
         # Yaw Check
-        g.enable_yaw_check = imgui.checkbox("Enable Yaw check (Car must be between 2 Yaw values)", g.enable_yaw_check)[1]
+        g.settings_dict["enable_yaw_check"] = imgui.checkbox("Enable Yaw check (Car must be between 2 Yaw values)", g.settings_dict["enable_yaw_check"])[1]
         
-        if g.enable_yaw_check:
-            g.min_yaw = imgui.input_float('Minimum Yaw', g.min_yaw)[1]
-            g.max_yaw = imgui.input_float('Maximum Yaw', g.max_yaw)[1]
+        if g.settings_dict["enable_yaw_check"]:
+            g.settings_dict["min_yaw"] = imgui.input_float('Minimum Yaw', g.settings_dict["min_yaw"])[1]
+            g.settings_dict["max_yaw"] = imgui.input_float('Maximum Yaw', g.settings_dict["max_yaw"])[1]
 
     def bf_other_gui(self):
-        g.save_inputs = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.save_inputs)[1]
-        if g.save_inputs:
-            g.save_folder = imgui.input_text('Folder Name', g.save_folder, 256)[1]
-            g.save_only_results = imgui.checkbox("Save only improvements separately", g.save_only_results)[1]
+        g.settings_dict["save_inputs"] = imgui.checkbox("Save inputs of every iteration and/or improvements separately in a folder", g.settings_dict["save_inputs"])[1]
+        if g.settings_dict["save_inputs"]:
+            g.settings_dict["save_folder"] = imgui.input_text('Folder Name', g.settings_dict["save_folder"], 256)[1]
+            g.settings_dict["save_only_results"] = imgui.checkbox("Save only improvements separately", g.settings_dict["save_only_results"])[1]
 
     def save_settings_gui(self):
         save = imgui.button("Save Settings")
         if save:
-            g.save_settings(g.settings_file_name)
+            g.save_settings(g.settings_dict["settings_file_name"])
 
     def load_settings_gui(self):
         load = imgui.button("Load Settings")
         if load:
-            g.load_settings(g.settings_file_name)
+            g.load_settings(g.settings_dict["settings_file_name"])
 
     def settings_file_name_gui(self):
-        g.settings_file_name = imgui.input_text("Settings File Name", g.settings_file_name, 256)[1] 
+        g.settings_dict["settings_file_name"] = imgui.input_text("Settings File Name", g.settings_dict["settings_file_name"], 256)[1] 
 
     def bf_settings(self):
         imgui.begin("Evaluation Settings", True)
 
         imgui.text("Goal and parameters")
-        g.current_goal = imgui.combo("Bruteforce Goal", g.current_goal, g.goals)[1]
-        if   g.current_goal == 0: self.bf_speed_gui()
-        elif g.current_goal == 1: self.bf_nose_gui()
-        elif g.current_goal == 2: self.bf_height_gui()
-        elif g.current_goal == 3: self.bf_point_gui()
+        g.settings_dict["current_goal"] = imgui.combo("Bruteforce Goal", g.settings_dict["current_goal"], g.settings_dict["goals"])[1]
+        if g.settings_dict["current_goal"] == 0: self.bf_speed_gui()
+        elif g.settings_dict["current_goal"] == 1: self.bf_nose_gui()
+        elif g.settings_dict["current_goal"] == 2: self.bf_height_gui()
+        elif g.settings_dict["current_goal"] == 3: self.bf_point_gui()
 
         imgui.separator()
 
         imgui.text("Evaluation time (in seconds)")
         timetext = lambda s, t: round(imgui.input_float(s, t/1000)[1] * 1000, 3)
-        g.time_min = timetext("Evaluation start (s)", g.time_min)
-        g.time_max = timetext("Evaluation end (s)", g.time_max)
-        if g.time_min > g.time_max:
-            g.time_max = g.time_min
+        g.settings_dict["time_min"] = timetext("Evaluation start (s)", g.settings_dict["time_min"])
+        g.settings_dict["time_max"] = timetext("Evaluation end (s)", g.settings_dict["time_max"])
+        if g.settings_dict["time_min"] > g.settings_dict["time_max"]:
+            g.settings_dict["time_max"] = g.settings_dict["time_min"]
 
         imgui.separator()
 
@@ -545,48 +372,50 @@ class GUI:
     def bf_result(self):
         # thanks shweetz
         # this is to clarify what unit of measurement is currently used
-        if   g.current_goal == 0: unit = "(km/h)" # Speed
-        elif g.current_goal == 1: unit = "(degrees)" # Nosepos
-        else:                     unit = "(m)" # Point/Height
+        if g.settings_dict["current_goal"] == 0: unit = "(km/h)" # Speed
+        elif g.settings_dict["current_goal"] == 1: unit = "(degrees)" # Nosepos
+        else: unit = "(m)" # Point/Height
 
         imgui.begin("Bruteforce Info", True)
 
-        imgui.text("Connection Status: " + (f"Connected to {g.server}" if g.is_registered else "Not Registered"))
+        imgui.text("Connection Status: " + (f"Connected to {g.settings_dict['server']}" if g.settings_dict['is_registered'] else "Not Registered"))
         imgui.separator()
 
-        best = g.current_best
-        if g.current_goal == 3 and best > 0: # Point
+        best = g.settings_dict["current_best"]
+        if g.settings_dict["current_goal"] == 3 and best > 0: # Point
             best = math.sqrt(best)
+
         imgui.text(f"Bruteforce Best: {round(best, 3)} {unit}")
 
-        imgui.text(f"Improvements: {g.improvements}")
-        imgui.text(f"Car information at {g.improvement_time}:")
+        imgui.text(f"Improvements: {g.settings_dict['improvements']}")
+        imgui.text(f"Car information at {g.settings_dict['improvement_time']}:")
 
         imgui.separator()
 
-        imgui.text(f"Position (x, y, z): {g.position}")
-        imgui.text(f"Velocity (x, y, z): {g.velocity}")
-        imgui.text(f"Rotation (yaw, pitch, roll): {g.rotation}")
+        imgui.text(f"Position (x, y, z): {g.settings_dict['position']}")
+        imgui.text(f"Velocity (x, y, z): {g.settings_dict['velocity']}")
+        imgui.text(f"Rotation (yaw, pitch, roll): {g.settings_dict['rotation']}")
 
         imgui.separator()
         
-        g.improvement_graph = imgui.checkbox("Enable improvement graph", g.improvement_graph)[1]
+        g.settings_dict["improvement_graph"] = imgui.checkbox("Enable improvement graph", g.settings_dict["improvement_graph"])[1]
 
         imgui.end()
 
     def bf_improvement_graph(self):
-        if not g.improvement_graph:
+        if not g.settings_dict["improvement_graph"]:
             pass
         else:
             imgui.begin("Improvement Graph", True)
             # The "##" is to make the name disappear, it is used to clarify what this plot is for in code.    
-            improvement = g.improvements_list[len(g.improvements_list)-1]
-            if improvement > g.improvement_graph_scale: g.improvement_graph_scale = improvement
+            improvement = g.settings_dict["improvements_list"][len(g.settings_dict["improvements_list"])-1]
+            if improvement > g.settings_dict["improvement_graph_scale"]: g.settings_dict["improvement_graph_scale"] = improvement
+
             imgui.plot_lines(
                 "##Improvement Graph", 
-                np.array(g.improvements_list, np.float32), 
+                np.array(g.settings_dict["improvements_list"], np.float32), 
                 graph_size=(700, 400),
-                scale_max=g.improvement_graph_scale 
+                scale_max=g.settings_dict["improvement_graph_scale"] 
             )
             
             imgui.end()
@@ -595,20 +424,20 @@ class GUI:
     def customize(self):
         imgui.begin("Customize", True)
 
-        if imgui.button("Start RGB scroll" if not g.rgbScroll else "Stop RGB Scroll"):
-            g.rgbScroll = not g.rgbScroll
+        if imgui.button("Start RGB scroll" if not g.settings_dict["rgb_scroll"] else "Stop RGB Scroll"):
+            g.settings_dict["rgb_scroll"] = not g.settings_dict["rgb_scroll"]
 
-        if g.rgbScroll:
-            if not any(g.color[:3]): g.color = [(i + 1) / 4 for i in range(4)]
-            g.colorChange = imgui.slider_float(
-                "Speed", g.colorChange,
+        if g.settings_dict["rgb_scroll"]:
+            if not any(g.settings_dict["color"][:3]): g.settings_dict["color"] = [(i + 1) / 4 for i in range(4)]
+            g.settings_dict["color_change"] = imgui.slider_float(
+                "Speed", g.settings_dict["color_change"],
                 min_value=0, max_value=32,
                 power=1
             )[1]
 
         else:
-            g.color = list(imgui.color_edit4("Background", *g.color, show_alpha=False)[1])
-            g.backgroundColor = g.color.copy()
+            g.settings_dict["color"] = list(imgui.color_edit4("Background", *g.settings_dict["color"], show_alpha=False)[1])
+            g.settings_dict["background_color"] = g.settings_dict["color"].copy()
 
         imgui.end()
 
@@ -625,14 +454,14 @@ class GUI:
 
             imgui.render()
 
-            if g.rgbScroll:
-                g.color = r2h(*g.color) # convert to hsv
-                g.color[0] = (g.color[0] + g.colorChange/1000000) % 1 # add hue (division is because of very high FPS)
-                g.color = h2r(*g.color) # convert back into rgb
+            if g.settings_dict["rgb_scroll"]:
+                g.settings_dict["color"] = r2h(*g.settings_dict["color"]) # convert to hsv
+                g.settings_dict["color"][0] = (g.settings_dict["color"][0] + g.settings_dict["color_change"]/1000000) % 1 # add hue (division is because of very high FPS)
+                g.settings_dict["color"] = h2r(*g.settings_dict["color"]) # convert back into rgb
 
-            g.backgroundColor = g.color.copy() # set the self.color
+            g.settings_dict["background_color"] = g.settings_dict["color"].copy() # set the self.color
 
-            gl.glClearColor(*g.backgroundColor)
+            gl.glClearColor(*g.settings_dict["background_color"])
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
             self.impl.render(imgui.get_draw_data())
