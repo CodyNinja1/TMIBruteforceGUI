@@ -39,8 +39,16 @@ except: # This is kinda stupid cuz its just installing it here too :xdd: but idk
     if not os.path.exists("global_funcs.py"):
         with open("global_funcs.py", "x") as globf: pass
     
-        with open("global_funcs.py" "wb") as globf:
+        with open("global_funcs.py", "wb") as globf:
             globf.write(requests.get(update_file_lines[3]).content)
+
+        with open("bf_goals.py", "x") as goalsf: pass
+    
+        with open("bf_goals.py", "wb") as goalsf:
+            goalsf.write(requests.get(update_file_lines[2]).content)
+
+        import global_funcs as g
+        from bf_goals import GoalSpeed, GoalNosepos, GoalHeight, GoalPoint
             
 
 update = g.update()
