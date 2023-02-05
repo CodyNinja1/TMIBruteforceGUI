@@ -6,7 +6,6 @@ A GUI Wrapper for TMInterface Custom Bruteforce Scripts! No more changing variab
 ---
 
 # How to use
-⚠️ The Wiki is slowly moving to https://github.com/CodyNinja1/TMIBruteforceGUI/wiki ⚠️
 
 There's a [TMIBruteforceGUI Discord server!](https://discord.gg/Pr4beaVxhf), if you don't have a GitHub account this is where you can ask questions, give suggestions etc 
 
