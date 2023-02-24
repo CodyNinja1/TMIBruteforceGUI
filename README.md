@@ -11,9 +11,9 @@ There's a [TMIBruteforceGUI Discord server!](https://discord.gg/Pr4beaVxhf), if 
 
 First, install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K) or from the [official Python website](https://www.python.org/downloads/release/python-3111/).
 
-Now install the Visual C++ Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/, after the launcher is done setting up, press `Desktop Development with C++` and then `Install` in the bottom right
+Now install the Visual C++ Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/, after the launcher is done setting up, press `Desktop Development with C++` and then `Install` in the bottom right.
 
-After those are done installing or you already have Python and the C++ Build Tools, go to [the latest release](https://github.com/CodyNinja1/TMIBruteforceGUI/releases/latest) and download the the ZIP file
+After those are done installing or you already have Python and the C++ Build Tools, go to [the latest release](https://github.com/CodyNinja1/TMIBruteforceGUI/releases/latest) and download the the ZIP file.
 
 Once the ZIP is downloaded, extract it.
 
