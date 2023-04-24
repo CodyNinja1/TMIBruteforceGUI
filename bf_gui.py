@@ -1,3 +1,4 @@
+import os
 try:
     import numpy as np
     import glfw
@@ -22,7 +23,6 @@ except:
 
 import colorsys
 import math
-import os
 import signal
 from struct import unpack
 import sys
