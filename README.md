@@ -7,8 +7,6 @@ A GUI Wrapper for TMInterface Custom Bruteforce Scripts! No more changing variab
 
 # How to use
 
-There's a [TMIBruteforceGUI Discord server!](https://discord.gg/Pr4beaVxhf), if you don't have a GitHub account this is where you can ask questions, give suggestions etc.
-
 First, install Python, either from the [Microsoft Store](https://apps.microsoft.com/store/detail/python-311/9NRWMJP3717K) or from the [official Python website](https://www.python.org/downloads/release/python-3111/).
 
 Now install the Visual C++ Build Tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/, after the launcher is done setting up, press `Desktop Development with C++` and then `Install` in the bottom right.
